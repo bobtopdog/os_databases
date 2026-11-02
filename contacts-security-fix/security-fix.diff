@@ -1,0 +1,2670 @@
+diff -ruN base/src/app/api/anexnotes/[contactId]/route.ts work/src/app/api/anexnotes/[contactId]/route.ts
+--- base/src/app/api/anexnotes/[contactId]/route.ts	2026-11-02 18:35:15.865823533 +0000
++++ work/src/app/api/anexnotes/[contactId]/route.ts	2026-11-02 18:36:22.966736275 +0000
+@@ -1,6 +1,7 @@
+ import { isValidContactId } from '@/libs/contactId';
+ import { NextRequest, NextResponse } from 'next/server';
+ import { getNotesByContactId } from '@/libs/anexNotesRepository';
++import { requireUser } from '@/libs/currentUser';
+ 
+ /**
+  * GET /api/anexnotes/:contactId
+@@ -10,6 +11,8 @@
+   _request: NextRequest,
+   { params }: { params: Promise<{ contactId: string }> }
+ ) {
++  const caller = await requireUser();
++  if ('response' in caller) return caller.response;
+   const { contactId } = await params;
+ 
+   if (!isValidContactId(contactId)) {
+diff -ruN base/src/app/api/anexnotes/note/[noteId]/route.ts work/src/app/api/anexnotes/note/[noteId]/route.ts
+--- base/src/app/api/anexnotes/note/[noteId]/route.ts	2026-11-02 18:35:15.865724634 +0000
++++ work/src/app/api/anexnotes/note/[noteId]/route.ts	2026-11-02 18:37:07.713350671 +0000
+@@ -1,6 +1,7 @@
+ import { NextRequest, NextResponse } from 'next/server';
+ import { updateNote, deleteNote } from '@/libs/anexNotesRepository';
+ import { parseOutcome, isOutcomeFkError } from '@/libs/outcomeValidation';
++import { requireUser } from '@/libs/currentUser';
+ function isValidUuid(value: string): boolean {
+   return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
+ }
+@@ -15,6 +16,8 @@
+   request: NextRequest,
+   { params }: { params: Promise<{ noteId: string }> }
+ ) {
++  const caller = await requireUser();
++  if ('response' in caller) return caller.response;
+   const { noteId } = await params;
+ 
+   if (!isValidUuid(noteId)) {
+@@ -34,7 +37,8 @@
+     );
+   }
+ 
+-  const { username, comment, outcomeId, subOutcomeId } = body;
++  const { comment, outcomeId, subOutcomeId } = body;
++  const username = caller.username;   // from the session, never the request
+ 
+   if (!username?.trim()) {
+     return NextResponse.json(
+@@ -89,6 +93,8 @@
+   request: NextRequest,
+   { params }: { params: Promise<{ noteId: string }> }
+ ) {
++  const caller = await requireUser();
++  if ('response' in caller) return caller.response;
+   const { noteId } = await params;
+ 
+   if (!isValidUuid(noteId)) {
+@@ -108,7 +114,7 @@
+     );
+   }
+ 
+-  const { username } = body;
++  const username = caller.username;   // from the session, never the request
+ 
+   if (!username?.trim()) {
+     return NextResponse.json(
+diff -ruN base/src/app/api/anexnotes/route.ts work/src/app/api/anexnotes/route.ts
+--- base/src/app/api/anexnotes/route.ts	2026-11-02 18:35:15.865893873 +0000
++++ work/src/app/api/anexnotes/route.ts	2026-11-02 18:36:44.645326065 +0000
+@@ -2,6 +2,7 @@
+ import { NextRequest, NextResponse } from 'next/server';
+ import { createNote } from '@/libs/anexNotesRepository';
+ import { parseOutcome, isOutcomeFkError } from '@/libs/outcomeValidation';
++import { requireUser } from '@/libs/currentUser';
+ 
+ /**
+  * POST /api/notes
+@@ -14,6 +15,8 @@
+  * }
+  */
+ export async function POST(request: NextRequest) {
++  const caller = await requireUser();
++  if ('response' in caller) return caller.response;
+   let body: { contactId?: string; username?: string; comment?: string; outcomeId?: number | null ; subOutcomeId?: number | null };
+ 
+   try {
+@@ -25,7 +28,8 @@
+     );
+   }
+ 
+-  const { contactId, username, comment, outcomeId, subOutcomeId } = body;
++  const { contactId, comment, outcomeId, subOutcomeId } = body;
++  const username = caller.username;   // from the session, never the request
+ 
+   if (!contactId || !isValidContactId(contactId)) {
+     return NextResponse.json(
+diff -ruN base/src/app/api/area/[contactId]/route.ts work/src/app/api/area/[contactId]/route.ts
+--- base/src/app/api/area/[contactId]/route.ts	2026-11-02 18:35:15.861177129 +0000
++++ work/src/app/api/area/[contactId]/route.ts	2026-11-02 18:36:22.953699694 +0000
+@@ -1,6 +1,7 @@
+ import { isValidContactId } from '@/libs/contactId';
+ import { NextRequest, NextResponse } from 'next/server';
+ import { getAreaByContactId } from '@/libs/areasRepository';
++import { requireUser } from '@/libs/currentUser';
+ 
+ /**
+  * GET /api/notes/:contactId
+@@ -10,6 +11,8 @@
+   _request: NextRequest,
+   { params }: { params: Promise<{ contactId: string }> }
+ ) {
++  const caller = await requireUser();
++  if ('response' in caller) return caller.response;
+   const { contactId } = await params;
+ 
+   if (!isValidContactId(contactId)) {
+diff -ruN base/src/app/api/area/area/[areaId]/route.ts work/src/app/api/area/area/[areaId]/route.ts
+--- base/src/app/api/area/area/[areaId]/route.ts	2026-11-02 18:35:15.861148257 +0000
++++ work/src/app/api/area/area/[areaId]/route.ts	2026-11-02 18:37:07.709454624 +0000
+@@ -1,5 +1,6 @@
+ import { NextRequest, NextResponse } from 'next/server';
+ import { deleteArea, } from '@/libs/areasRepository';
++import { requireUser } from '@/libs/currentUser';
+ 
+ function isValidUuid(value: string): boolean {
+   return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
+@@ -15,6 +16,8 @@
+   request: NextRequest,
+   { params }: { params: Promise<{ areaId: string }> }
+ ) {
++  const caller = await requireUser();
++  if ('response' in caller) return caller.response;
+   const { areaId } = await params;
+ 
+   if (!isValidUuid(areaId)) {
+@@ -34,7 +37,7 @@
+     );
+   }
+ 
+-  const { username } = body;
++  const username = caller.username;   // from the session, never the request
+ 
+   if (!username?.trim()) {
+     return NextResponse.json(
+diff -ruN base/src/app/api/area/route.ts work/src/app/api/area/route.ts
+--- base/src/app/api/area/route.ts	2026-11-02 18:35:15.861191441 +0000
++++ work/src/app/api/area/route.ts	2026-11-02 18:36:44.630184440 +0000
+@@ -1,5 +1,6 @@
+ import { NextRequest, NextResponse } from 'next/server';
+ import { createArea } from '@/libs/areasRepository';
++import { requireUser } from '@/libs/currentUser';
+ 
+ function isValidUuid(value: string): boolean {
+   return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
+@@ -16,6 +17,8 @@
+  * }
+  */
+ export async function POST(request: NextRequest) {
++  const caller = await requireUser();
++  if ('response' in caller) return caller.response;
+   let body: { contactId?: string; username?: string; area?: string };
+ 
+   try {
+@@ -27,7 +30,8 @@
+     );
+   }
+ 
+-  const { contactId, username, area } = body;
++  const { contactId, area } = body;
++  const username = caller.username;   // from the session, never the request
+ 
+   if (!contactId || !isValidUuid(contactId)) {
+     return NextResponse.json(
+diff -ruN base/src/app/api/areas/route.ts work/src/app/api/areas/route.ts
+--- base/src/app/api/areas/route.ts	2026-11-02 18:35:15.861255521 +0000
++++ work/src/app/api/areas/route.ts	2026-11-02 18:36:22.964456510 +0000
+@@ -1,11 +1,14 @@
+ import { NextResponse } from 'next/server';
+ import { getAllAreas } from '@/libs/areasDdRepository';
++import { requireUser } from '@/libs/currentUser';
+ 
+ /**
+  * GET /api/teams
+  * Returns all teams for the team buttons on the home page.
+  */
+ export async function GET() {
++  const caller = await requireUser();
++  if ('response' in caller) return caller.response;
+   try {
+     const tags = await getAllAreas();
+     return NextResponse.json({ data: tags });
+diff -ruN base/src/app/api/communities/[communityId]/contacts/route.ts work/src/app/api/communities/[communityId]/contacts/route.ts
+--- base/src/app/api/communities/[communityId]/contacts/route.ts	2026-11-02 18:35:15.861393351 +0000
++++ work/src/app/api/communities/[communityId]/contacts/route.ts	2026-11-02 18:36:22.961958206 +0000
+@@ -1,5 +1,6 @@
+ import { NextRequest, NextResponse } from 'next/server';
+ import { getContactIdsByCommunity } from '@/libs/communitiesRepository';
++import { requireUser } from '@/libs/currentUser';
+ 
+ function isValidUuid(value: string): boolean {
+   return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
+@@ -13,6 +14,8 @@
+   _request: NextRequest,
+   { params }: { params: Promise<{ communityId: string }> }
+ ) {
++  const caller = await requireUser();
++  if ('response' in caller) return caller.response;
+   const { communityId } = await params;
+ 
+   if (!isValidUuid(communityId)) {
+diff -ruN base/src/app/api/communities/[communityId]/detail/route.ts work/src/app/api/communities/[communityId]/detail/route.ts
+--- base/src/app/api/communities/[communityId]/detail/route.ts	2026-11-02 18:35:15.861456026 +0000
++++ work/src/app/api/communities/[communityId]/detail/route.ts	2026-11-02 18:36:44.638773039 +0000
+@@ -1,12 +1,15 @@
+ import { NextRequest, NextResponse } from 'next/server';
+ import { getCommunityDetail } from '@/libs/communityPagesRepository';
++import { requireUser } from '@/libs/currentUser';
+ 
+ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+ 
+ /** GET /api/communities/:communityId/detail?username=xxx */
+ export async function GET(request: NextRequest, { params }: { params: Promise<{ communityId: string }> }) {
++  const caller = await requireUser();
++  if ('response' in caller) return caller.response;
+   const { communityId } = await params;
+-  const username = request.nextUrl.searchParams.get('username')?.trim() ?? '';
++  const username = caller.username;
+   if (!UUID.test(communityId)) {
+     return NextResponse.json({ error: 'Bad Request', message: 'Invalid community ID.' }, { status: 400 });
+   }
+diff -ruN base/src/app/api/communities/[communityId]/headlines/route.ts work/src/app/api/communities/[communityId]/headlines/route.ts
+--- base/src/app/api/communities/[communityId]/headlines/route.ts	2026-11-02 18:35:15.861424661 +0000
++++ work/src/app/api/communities/[communityId]/headlines/route.ts	2026-11-02 18:36:44.640011171 +0000
+@@ -1,11 +1,14 @@
+ import { NextRequest, NextResponse } from 'next/server';
+ import { getCommunityHeadlines, createCommunityHeadline, isCommunityMember } from '@/libs/communityPagesRepository';
++import { requireUser } from '@/libs/currentUser';
+ 
+ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+ type Ctx = { params: Promise<{ communityId: string }> };
+ 
+ /** GET — all headlines (anyone can read) */
+ export async function GET(_r: NextRequest, { params }: Ctx) {
++  const caller = await requireUser();
++  if ('response' in caller) return caller.response;
+   const { communityId } = await params;
+   if (!UUID.test(communityId)) return NextResponse.json({ error: 'Bad Request', message: 'Invalid community ID.' }, { status: 400 });
+   try {
+@@ -18,10 +21,12 @@
+ 
+ /** POST — members only. Body: { username, title, body } */
+ export async function POST(request: NextRequest, { params }: Ctx) {
++  const caller = await requireUser();
++  if ('response' in caller) return caller.response;
+   const { communityId } = await params;
+   let b: { username?: string; title?: string; body?: string };
+   try { b = await request.json(); } catch { return NextResponse.json({ error: 'Bad Request', message: 'Invalid JSON body' }, { status: 400 }); }
+-  const username = b.username?.trim() ?? '';
++  const username = caller.username;
+   const title = b.title?.trim() ?? '';
+   const body = b.body?.trim() ?? '';
+   if (!UUID.test(communityId) || !username || !title) return NextResponse.json({ error: 'Bad Request', message: 'username and title are required.' }, { status: 400 });
+diff -ruN base/src/app/api/communities/[communityId]/meetings/route.ts work/src/app/api/communities/[communityId]/meetings/route.ts
+--- base/src/app/api/communities/[communityId]/meetings/route.ts	2026-11-02 18:35:15.861644143 +0000
++++ work/src/app/api/communities/[communityId]/meetings/route.ts	2026-11-02 18:36:22.961800419 +0000
+@@ -1,10 +1,13 @@
+ import { NextRequest, NextResponse } from 'next/server';
+ import { getCommunityMeetings } from '@/libs/communityPagesRepository';
++import { requireUser } from '@/libs/currentUser';
+ 
+ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+ 
+ /** GET /api/communities/:communityId/meetings — meetings tagged with this community */
+ export async function GET(_r: NextRequest, { params }: { params: Promise<{ communityId: string }> }) {
++  const caller = await requireUser();
++  if ('response' in caller) return caller.response;
+   const { communityId } = await params;
+   if (!UUID.test(communityId)) return NextResponse.json({ error: 'Bad Request', message: 'Invalid community ID.' }, { status: 400 });
+   try {
+diff -ruN base/src/app/api/communities/[communityId]/members/[memberId]/route.ts work/src/app/api/communities/[communityId]/members/[memberId]/route.ts
+--- base/src/app/api/communities/[communityId]/members/[memberId]/route.ts	2026-11-02 18:35:15.861572313 +0000
++++ work/src/app/api/communities/[communityId]/members/[memberId]/route.ts	2026-11-02 18:36:44.639751035 +0000
+@@ -1,5 +1,6 @@
+ import { NextRequest, NextResponse } from 'next/server';
+ import { removeCommunityMember } from '@/libs/communitiesRepository';
++import { requireUser } from '@/libs/currentUser';
+ 
+ function isValidUuid(value: string): boolean {
+   return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
+@@ -14,6 +15,8 @@
+   request: NextRequest,
+   { params }: { params: Promise<{ communityId: string; memberId: string }> }
+ ) {
++  const caller = await requireUser();
++  if ('response' in caller) return caller.response;
+   const { communityId, memberId } = await params;
+ 
+   if (!isValidUuid(communityId) || !isValidUuid(memberId)) {
+@@ -33,7 +36,7 @@
+     );
+   }
+ 
+-  if (!body.username?.trim()) {
++  if (!caller.username) {
+     return NextResponse.json(
+       { error: 'Bad Request', message: 'username is required.' },
+       { status: 400 }
+@@ -41,7 +44,7 @@
+   }
+ 
+   try {
+-    const removed = await removeCommunityMember(communityId, memberId, body.username.trim());
++    const removed = await removeCommunityMember(communityId, memberId, caller.username);
+     if (!removed) {
+       return NextResponse.json(
+         {
+diff -ruN base/src/app/api/communities/[communityId]/members/route.ts work/src/app/api/communities/[communityId]/members/route.ts
+--- base/src/app/api/communities/[communityId]/members/route.ts	2026-11-02 18:35:15.861613801 +0000
++++ work/src/app/api/communities/[communityId]/members/route.ts	2026-11-02 18:36:44.639521776 +0000
+@@ -1,5 +1,6 @@
+ import { NextRequest, NextResponse } from 'next/server';
+ import { addCommunityMember } from '@/libs/communitiesRepository';
++import { requireUser } from '@/libs/currentUser';
+ 
+ function isValidUuid(value: string): boolean {
+   return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
+@@ -14,6 +15,8 @@
+   request: NextRequest,
+   { params }: { params: Promise<{ communityId: string }> }
+ ) {
++  const caller = await requireUser();
++  if ('response' in caller) return caller.response;
+   const { communityId } = await params;
+ 
+   if (!isValidUuid(communityId)) {
+@@ -33,7 +36,8 @@
+     );
+   }
+ 
+-  const { requestingUser, newMemberUsername } = body;
++  const { newMemberUsername } = body;
++  const requestingUser = caller.username;   // from the session, never the request
+ 
+   if (!requestingUser?.trim()) {
+     return NextResponse.json(
+diff -ruN base/src/app/api/communities/[communityId]/notes/route.ts work/src/app/api/communities/[communityId]/notes/route.ts
+--- base/src/app/api/communities/[communityId]/notes/route.ts	2026-11-02 18:35:15.861483049 +0000
++++ work/src/app/api/communities/[communityId]/notes/route.ts	2026-11-02 18:36:44.639146345 +0000
+@@ -1,13 +1,16 @@
+ import { NextRequest, NextResponse } from 'next/server';
+ import { getMyCommunityNote, createCommunityNote, isCommunityMember } from '@/libs/communityPagesRepository';
++import { requireUser } from '@/libs/currentUser';
+ 
+ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+ type Ctx = { params: Promise<{ communityId: string }> };
+ 
+ /** GET ?username= — the caller's own private note (or null) */
+ export async function GET(request: NextRequest, { params }: Ctx) {
++  const caller = await requireUser();
++  if ('response' in caller) return caller.response;
+   const { communityId } = await params;
+-  const username = request.nextUrl.searchParams.get('username')?.trim() ?? '';
++  const username = caller.username;
+   if (!UUID.test(communityId) || !username) return NextResponse.json({ error: 'Bad Request', message: 'communityId and username are required.' }, { status: 400 });
+   try {
+     return NextResponse.json({ data: await getMyCommunityNote(communityId, username) });
+@@ -19,10 +22,12 @@
+ 
+ /** POST — create (members only, one per user). Body: { username, comment } */
+ export async function POST(request: NextRequest, { params }: Ctx) {
++  const caller = await requireUser();
++  if ('response' in caller) return caller.response;
+   const { communityId } = await params;
+   let body: { username?: string; comment?: string };
+   try { body = await request.json(); } catch { return NextResponse.json({ error: 'Bad Request', message: 'Invalid JSON body' }, { status: 400 }); }
+-  const username = body.username?.trim() ?? '';
++  const username = caller.username;
+   const comment = body.comment?.trim() ?? '';
+   if (!UUID.test(communityId) || !username || !comment) return NextResponse.json({ error: 'Bad Request', message: 'username and comment are required.' }, { status: 400 });
+   try {
+diff -ruN base/src/app/api/communities/[communityId]/poc/route.ts work/src/app/api/communities/[communityId]/poc/route.ts
+--- base/src/app/api/communities/[communityId]/poc/route.ts	2026-11-02 18:35:15.861369390 +0000
++++ work/src/app/api/communities/[communityId]/poc/route.ts	2026-11-02 18:36:55.479157862 +0000
+@@ -2,12 +2,15 @@
+ import {
+   getCommunityPocs, addCommunityPoc, removeCommunityPoc, isCommunityMember,
+ } from '@/libs/communityPagesRepository';
++import { requireUser } from '@/libs/currentUser';
+ 
+ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+ type Ctx = { params: Promise<{ communityId: string }> };
+ 
+ /** GET — list PoCs (anyone) */
+ export async function GET(_r: NextRequest, { params }: Ctx) {
++  const caller = await requireUser();
++  if ('response' in caller) return caller.response;
+   const { communityId } = await params;
+   if (!UUID.test(communityId)) return NextResponse.json({ error: 'Bad Request', message: 'Invalid community ID.' }, { status: 400 });
+   try {
+@@ -18,14 +21,12 @@
+   }
+ }
+ 
+-async function readUsername(request: NextRequest): Promise<string> {
+-  try { return ((await request.json()).username as string)?.trim() ?? ''; } catch { return ''; }
+-}
+-
+ /** POST — mark self as PoC (members only). Body: { username } */
+-export async function POST(request: NextRequest, { params }: Ctx) {
++export async function POST(_request: NextRequest, { params }: Ctx) {
++  const caller = await requireUser();
++  if ('response' in caller) return caller.response;
+   const { communityId } = await params;
+-  const username = await readUsername(request);
++  const username = caller.username;
+   if (!UUID.test(communityId) || !username) return NextResponse.json({ error: 'Bad Request', message: 'communityId and username are required.' }, { status: 400 });
+   try {
+     if (!(await isCommunityMember(communityId, username))) {
+@@ -40,9 +41,11 @@
+ }
+ 
+ /** DELETE — remove self as PoC. Body: { username } */
+-export async function DELETE(request: NextRequest, { params }: Ctx) {
++export async function DELETE(_request: NextRequest, { params }: Ctx) {
++  const caller = await requireUser();
++  if ('response' in caller) return caller.response;
+   const { communityId } = await params;
+-  const username = await readUsername(request);
++  const username = caller.username;
+   if (!UUID.test(communityId) || !username) return NextResponse.json({ error: 'Bad Request', message: 'communityId and username are required.' }, { status: 400 });
+   try {
+     await removeCommunityPoc(communityId, username);
+diff -ruN base/src/app/api/communities/[communityId]/route.ts work/src/app/api/communities/[communityId]/route.ts
+--- base/src/app/api/communities/[communityId]/route.ts	2026-11-02 18:35:15.861500095 +0000
++++ work/src/app/api/communities/[communityId]/route.ts	2026-11-02 18:36:44.638498237 +0000
+@@ -1,5 +1,6 @@
+ import { NextRequest, NextResponse } from 'next/server';
+ import { getCommunityMembers, deleteCommunity } from '@/libs/communitiesRepository';
++import { requireUser } from '@/libs/currentUser';
+ 
+ function isValidUuid(value: string): boolean {
+   return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
+@@ -13,6 +14,8 @@
+   _request: NextRequest,
+   { params }: { params: Promise<{ communityId: string }> }
+ ) {
++  const caller = await requireUser();
++  if ('response' in caller) return caller.response;
+   const { communityId } = await params;
+ 
+   if (!isValidUuid(communityId)) {
+@@ -43,6 +46,8 @@
+   request: NextRequest,
+   { params }: { params: Promise<{ communityId: string }> }
+ ) {
++  const caller = await requireUser();
++  if ('response' in caller) return caller.response;
+   const { communityId } = await params;
+ 
+   if (!isValidUuid(communityId)) {
+@@ -62,7 +67,7 @@
+     );
+   }
+ 
+-  if (!body.username?.trim()) {
++  if (!caller.username) {
+     return NextResponse.json(
+       { error: 'Bad Request', message: 'username is required.' },
+       { status: 400 }
+@@ -70,7 +75,7 @@
+   }
+ 
+   try {
+-    const deleted = await deleteCommunity(communityId, body.username.trim());
++    const deleted = await deleteCommunity(communityId, caller.username);
+     if (!deleted) {
+       return NextResponse.json(
+         { error: 'Forbidden', message: 'Only the creator can delete this community.' },
+diff -ruN base/src/app/api/communities/all/route.ts work/src/app/api/communities/all/route.ts
+--- base/src/app/api/communities/all/route.ts	2026-11-02 18:35:15.861750892 +0000
++++ work/src/app/api/communities/all/route.ts	2026-11-02 18:36:44.641946948 +0000
+@@ -1,9 +1,12 @@
+ import { NextRequest, NextResponse } from 'next/server';
+ import { getAllCommunities } from '@/libs/communityPagesRepository';
++import { requireUser } from '@/libs/currentUser';
+ 
+ /** GET /api/communities/all?username=xxx — every community, user's own first */
+ export async function GET(request: NextRequest) {
+-  const username = request.nextUrl.searchParams.get('username')?.trim() ?? '';
++  const caller = await requireUser();
++  if ('response' in caller) return caller.response;
++  const username = caller.username;
+   if (!username) {
+     return NextResponse.json({ error: 'Bad Request', message: 'username is required.' }, { status: 400 });
+   }
+diff -ruN base/src/app/api/communities/contacts/[contactId]/route.ts work/src/app/api/communities/contacts/[contactId]/route.ts
+--- base/src/app/api/communities/contacts/[contactId]/route.ts	2026-11-02 18:35:15.861691148 +0000
++++ work/src/app/api/communities/contacts/[contactId]/route.ts	2026-11-02 18:36:22.963225331 +0000
+@@ -1,6 +1,7 @@
+ import { isValidContactId } from '@/libs/contactId';
+ import { NextRequest, NextResponse } from 'next/server';
+ import { getContactTags, addContactTag } from '@/libs/communitiesRepository';
++import { requireUser } from '@/libs/currentUser';
+ 
+ /**
+  * GET /api/communities/contacts/:contactId
+@@ -10,6 +11,8 @@
+   _request: NextRequest,
+   { params }: { params: Promise<{ contactId: string }> }
+ ) {
++  const caller = await requireUser();
++  if ('response' in caller) return caller.response;
+   const { contactId } = await params;
+ 
+   if (!isValidContactId(contactId)) {
+diff -ruN base/src/app/api/communities/headlines/[headlineId]/route.ts work/src/app/api/communities/headlines/[headlineId]/route.ts
+--- base/src/app/api/communities/headlines/[headlineId]/route.ts	2026-11-02 18:35:15.861729215 +0000
++++ work/src/app/api/communities/headlines/[headlineId]/route.ts	2026-11-02 18:36:44.641646087 +0000
+@@ -1,14 +1,17 @@
+ import { NextRequest, NextResponse } from 'next/server';
+ import { updateCommunityHeadline, deleteCommunityHeadline } from '@/libs/communityPagesRepository';
++import { requireUser } from '@/libs/currentUser';
+ 
+ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+ type Ctx = { params: Promise<{ headlineId: string }> };
+ 
+ export async function PATCH(request: NextRequest, { params }: Ctx) {
++  const caller = await requireUser();
++  if ('response' in caller) return caller.response;
+   const { headlineId } = await params;
+   let b: { username?: string; title?: string; body?: string };
+   try { b = await request.json(); } catch { return NextResponse.json({ error: 'Bad Request', message: 'Invalid JSON body' }, { status: 400 }); }
+-  const username = b.username?.trim() ?? '';
++  const username = caller.username;
+   const title = b.title?.trim() ?? '';
+   const body = b.body?.trim() ?? '';
+   if (!UUID.test(headlineId) || !username || !title) return NextResponse.json({ error: 'Bad Request', message: 'username and title are required.' }, { status: 400 });
+@@ -23,6 +26,8 @@
+ }
+ 
+ export async function DELETE(request: NextRequest, { params }: Ctx) {
++  const caller = await requireUser();
++  if ('response' in caller) return caller.response;
+   const { headlineId } = await params;
+   let username = '';
+   try { username = ((await request.json()).username as string)?.trim() ?? ''; } catch { /* handled below */ }
+diff -ruN base/src/app/api/communities/meeting-tags/[meetingId]/route.ts work/src/app/api/communities/meeting-tags/[meetingId]/route.ts
+--- base/src/app/api/communities/meeting-tags/[meetingId]/route.ts	2026-11-02 18:35:15.864515748 +0000
++++ work/src/app/api/communities/meeting-tags/[meetingId]/route.ts	2026-11-02 18:36:44.640846107 +0000
+@@ -1,5 +1,6 @@
+ import { NextRequest, NextResponse } from 'next/server';
+ import { getMeetingCommunityTags, removeMeetingCommunityTag } from '@/libs/communitiesRepository';
++import { requireUser } from '@/libs/currentUser';
+ 
+ function isValidUuid(value: string): boolean {
+   return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
+@@ -13,6 +14,8 @@
+   _request: NextRequest,
+   { params }: { params: Promise<{ meetingId: string }> }
+ ) {
++  const caller = await requireUser();
++  if ('response' in caller) return caller.response;
+   const { meetingId } = await params;
+ 
+   if (!isValidUuid(meetingId)) {
+@@ -43,6 +46,8 @@
+   request: NextRequest,
+   { params }: { params: Promise<{ meetingId: string }> }
+ ) {
++  const caller = await requireUser();
++  if ('response' in caller) return caller.response;
+   await params; // tagId in the body identifies the row
+ 
+   let body: { tagId?: string; username?: string };
+@@ -55,7 +60,8 @@
+     );
+   }
+ 
+-  const { tagId, username } = body;
++  const { tagId } = body;
++  const username = caller.username;   // from the session, never the request
+ 
+   if (!tagId || !isValidUuid(tagId)) {
+     return NextResponse.json(
+diff -ruN base/src/app/api/communities/meeting-tags/route.ts work/src/app/api/communities/meeting-tags/route.ts
+--- base/src/app/api/communities/meeting-tags/route.ts	2026-11-02 18:35:15.864538438 +0000
++++ work/src/app/api/communities/meeting-tags/route.ts	2026-11-02 18:36:44.640512632 +0000
+@@ -2,6 +2,7 @@
+ import { tagMeetingWithCommunity } from '@/libs/communitiesRepository';
+ import { notifyCommunityGroupOfMeeting } from '@/libs/communityNotify';
+ import { notesQuery } from '@/libs/notesDb';
++import { requireUser } from '@/libs/currentUser';
+ 
+ function isValidUuid(value: string): boolean {
+   return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
+@@ -14,6 +15,8 @@
+  * No email notifications for community tags (unlike meeting groups).
+  */
+ export async function POST(request: NextRequest) {
++  const caller = await requireUser();
++  if ('response' in caller) return caller.response;
+   let body: { meetingId?: string; communityId?: string; taggedBy?: string };
+   try {
+     body = await request.json();
+@@ -24,7 +27,8 @@
+     );
+   }
+ 
+-  const { meetingId, communityId, taggedBy } = body;
++  const { meetingId, communityId } = body;
++  const taggedBy = caller.username;   // from the session, never the request
+ 
+   if (!meetingId || !isValidUuid(meetingId)) {
+     return NextResponse.json(
+diff -ruN base/src/app/api/communities/notes/[noteId]/route.ts work/src/app/api/communities/notes/[noteId]/route.ts
+--- base/src/app/api/communities/notes/[noteId]/route.ts	2026-11-02 18:35:15.864369470 +0000
++++ work/src/app/api/communities/notes/[noteId]/route.ts	2026-11-02 18:36:44.641130591 +0000
+@@ -1,14 +1,17 @@
+ import { NextRequest, NextResponse } from 'next/server';
+ import { updateCommunityNote, deleteCommunityNote } from '@/libs/communityPagesRepository';
++import { requireUser } from '@/libs/currentUser';
+ 
+ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+ type Ctx = { params: Promise<{ noteId: string }> };
+ 
+ export async function PATCH(request: NextRequest, { params }: Ctx) {
++  const caller = await requireUser();
++  if ('response' in caller) return caller.response;
+   const { noteId } = await params;
+   let body: { username?: string; comment?: string };
+   try { body = await request.json(); } catch { return NextResponse.json({ error: 'Bad Request', message: 'Invalid JSON body' }, { status: 400 }); }
+-  const username = body.username?.trim() ?? '';
++  const username = caller.username;
+   const comment = body.comment?.trim() ?? '';
+   if (!UUID.test(noteId) || !username || !comment) return NextResponse.json({ error: 'Bad Request', message: 'username and comment are required.' }, { status: 400 });
+   try {
+@@ -22,6 +25,8 @@
+ }
+ 
+ export async function DELETE(request: NextRequest, { params }: Ctx) {
++  const caller = await requireUser();
++  if ('response' in caller) return caller.response;
+   const { noteId } = await params;
+   let username = '';
+   try { username = ((await request.json()).username as string)?.trim() ?? ''; } catch { /* handled below */ }
+diff -ruN base/src/app/api/communities/route.ts work/src/app/api/communities/route.ts
+--- base/src/app/api/communities/route.ts	2026-11-02 18:35:15.864417690 +0000
++++ work/src/app/api/communities/route.ts	2026-11-02 18:36:44.638098371 +0000
+@@ -2,13 +2,16 @@
+ import { getUserCommunities, createCommunity } from '@/libs/communitiesRepository';
+ //import { getUserCommunities } from '@/libs/communitiesRepository';
+ import { createCommunityWithGroup } from '@/libs/communityPagesRepository';
++import { requireUser } from '@/libs/currentUser';
+ 
+ /**
+  * GET /api/communities?username=xxx
+  * Returns communities the user belongs to.
+  */
+ export async function GET(request: NextRequest) {
+-  const username = request.nextUrl.searchParams.get('username');
++  const caller = await requireUser();
++  if ('response' in caller) return caller.response;
++  const username = caller.username;
+ 
+   if (!username?.trim()) {
+     return NextResponse.json(
+@@ -34,6 +37,8 @@
+  * Body: { name, description, username }
+  */
+ export async function POST(request: NextRequest) {
++  const caller = await requireUser();
++  if ('response' in caller) return caller.response;
+   let body: { name?: string; description?: string; username?: string };
+   try {
+     body = await request.json();
+@@ -44,7 +49,8 @@
+     );
+   }
+ 
+-  const { name, description = '', username } = body;
++  const { name, description = '' } = body;
++  const username = caller.username;   // from the session, never the request
+ 
+   if (!name?.trim()) {
+     return NextResponse.json(
+diff -ruN base/src/app/api/communities/tags/[tagId]/route.ts work/src/app/api/communities/tags/[tagId]/route.ts
+--- base/src/app/api/communities/tags/[tagId]/route.ts	2026-11-02 18:35:15.861808244 +0000
++++ work/src/app/api/communities/tags/[tagId]/route.ts	2026-11-02 18:36:44.642462258 +0000
+@@ -1,5 +1,6 @@
+ import { NextRequest, NextResponse } from 'next/server';
+ import { removeContactTag } from '@/libs/communitiesRepository';
++import { requireUser } from '@/libs/currentUser';
+ 
+ function isValidUuid(value: string): boolean {
+   return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
+@@ -14,6 +15,8 @@
+   request: NextRequest,
+   { params }: { params: Promise<{ tagId: string }> }
+ ) {
++  const caller = await requireUser();
++  if ('response' in caller) return caller.response;
+   const { tagId } = await params;
+ 
+   if (!isValidUuid(tagId)) {
+@@ -33,7 +36,7 @@
+     );
+   }
+ 
+-  if (!body.username?.trim()) {
++  if (!caller.username) {
+     return NextResponse.json(
+       { error: 'Bad Request', message: 'username is required.' },
+       { status: 400 }
+@@ -41,7 +44,7 @@
+   }
+ 
+   try {
+-    const removed = await removeContactTag(tagId, body.username.trim());
++    const removed = await removeContactTag(tagId, caller.username);
+     if (!removed) {
+       return NextResponse.json(
+         { error: 'Forbidden', message: 'You can only remove tags you created.' },
+diff -ruN base/src/app/api/communities/tags/route.ts work/src/app/api/communities/tags/route.ts
+--- base/src/app/api/communities/tags/route.ts	2026-11-02 18:35:15.861820444 +0000
++++ work/src/app/api/communities/tags/route.ts	2026-11-02 18:36:44.642238149 +0000
+@@ -1,5 +1,6 @@
+ import { NextRequest, NextResponse } from 'next/server';
+ import { addContactTag } from '@/libs/communitiesRepository';
++import { requireUser } from '@/libs/currentUser';
+ 
+ function isValidUuid(value: string): boolean {
+   return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
+@@ -11,6 +12,8 @@
+  * The user must be a member of the community.
+  */
+ export async function POST(request: NextRequest) {
++  const caller = await requireUser();
++  if ('response' in caller) return caller.response;
+   let body: { contactId?: string; communityId?: string; taggedBy?: string };
+   try {
+     body = await request.json();
+@@ -21,7 +24,8 @@
+     );
+   }
+ 
+-  const { contactId, communityId, taggedBy } = body;
++  const { contactId, communityId } = body;
++  const taggedBy = caller.username;   // from the session, never the request
+ 
+   if (!contactId || !isValidUuid(contactId)) {
+     return NextResponse.json(
+diff -ruN base/src/app/api/contacts/[id]/route.ts work/src/app/api/contacts/[id]/route.ts
+--- base/src/app/api/contacts/[id]/route.ts	2026-11-02 18:35:15.864818842 +0000
++++ work/src/app/api/contacts/[id]/route.ts	2026-11-02 18:36:22.964088806 +0000
+@@ -1,12 +1,15 @@
+ import { NextRequest, NextResponse } from 'next/server';
+ import { getLiveProfile, LiveAuthError } from '@/libs/liveContactsServer';
+ import { isValidContactId } from '@/libs/contactId';
++import { requireUser } from '@/libs/currentUser';
+ 
+ /** GET /api/contacts/:id — one profile, mapped to the app's ContactDetail. */
+ export async function GET(
+   _request: NextRequest,
+   { params }: { params: Promise<{ id: string }> }
+ ) {
++  const caller = await requireUser();
++  if ('response' in caller) return caller.response;
+   const id = decodeURIComponent((await params).id);
+   if (!isValidContactId(id)) {
+     return NextResponse.json({ error: 'Bad Request', message: 'Invalid contact id.' }, { status: 400 });
+diff -ruN base/src/app/api/contacts/organisations/route.ts work/src/app/api/contacts/organisations/route.ts
+--- base/src/app/api/contacts/organisations/route.ts	2026-11-02 18:35:15.864739555 +0000
++++ work/src/app/api/contacts/organisations/route.ts	2026-11-02 18:36:22.964211253 +0000
+@@ -1,8 +1,11 @@
+ import { NextResponse } from 'next/server';
+ import { getLiveOrganisations, LiveAuthError } from '@/libs/liveContactsServer';
++import { requireUser } from '@/libs/currentUser';
+ 
+ /** GET /api/contacts/organisations — [{ id, name }] for the dropdown. */
+ export async function GET() {
++  const caller = await requireUser();
++  if ('response' in caller) return caller.response;
+   try {
+     return NextResponse.json({ data: await getLiveOrganisations() });
+   } catch (err) {
+diff -ruN base/src/app/api/contacts/route.ts work/src/app/api/contacts/route.ts
+--- base/src/app/api/contacts/route.ts	2026-11-02 18:35:15.864760216 +0000
++++ work/src/app/api/contacts/route.ts	2026-11-02 18:36:22.963942411 +0000
+@@ -1,5 +1,6 @@
+ import { NextRequest, NextResponse } from 'next/server';
+ import { searchLivePeople, LiveAuthError } from '@/libs/liveContactsServer';
++import { requireUser } from '@/libs/currentUser';
+ 
+ /**
+  * GET /api/contacts?q=David&organisation=<org uuid>
+@@ -8,6 +9,8 @@
+  * applies. Response keeps the app's { data, pagination } shape.
+  */
+ export async function GET(request: NextRequest) {
++  const caller = await requireUser();
++  if ('response' in caller) return caller.response;
+   const q = request.nextUrl.searchParams.get('q') ?? '';
+   const organisation = request.nextUrl.searchParams.get('organisation') ?? '';
+ 
+diff -ruN base/src/app/api/documents/[contactId]/route.ts work/src/app/api/documents/[contactId]/route.ts
+--- base/src/app/api/documents/[contactId]/route.ts	2026-11-02 18:35:15.867817895 +0000
++++ work/src/app/api/documents/[contactId]/route.ts	2026-11-02 18:36:22.967500451 +0000
+@@ -1,6 +1,7 @@
+ import { isValidContactId } from '@/libs/contactId';
+ import { NextRequest, NextResponse } from 'next/server';
+ import { getDocumentsByContactId } from '@/libs/documentsRepository';
++import { requireUser } from '@/libs/currentUser';
+ 
+ /**
+  * GET /api/documents/:contactId
+@@ -10,6 +11,8 @@
+   _request: NextRequest,
+   { params }: { params: Promise<{ contactId: string }> }
+ ) {
++  const caller = await requireUser();
++  if ('response' in caller) return caller.response;
+   const { contactId } = await params;
+ 
+   if (!isValidContactId(contactId)) {
+diff -ruN base/src/app/api/documents/document/[documentId]/route.ts work/src/app/api/documents/document/[documentId]/route.ts
+--- base/src/app/api/documents/document/[documentId]/route.ts	2026-11-02 18:35:15.867912015 +0000
++++ work/src/app/api/documents/document/[documentId]/route.ts	2026-11-02 18:36:44.646383895 +0000
+@@ -1,5 +1,6 @@
+ import { NextRequest, NextResponse } from 'next/server';
+ import { deleteDocument } from '@/libs/documentsRepository';
++import { requireUser } from '@/libs/currentUser';
+ 
+ function isValidUuid(value: string): boolean {
+   return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
+@@ -14,6 +15,8 @@
+   request: NextRequest,
+   { params }: { params: Promise<{ documentId: string }> }
+ ) {
++  const caller = await requireUser();
++  if ('response' in caller) return caller.response;
+   const { documentId } = await params;
+ 
+   if (!isValidUuid(documentId)) {
+@@ -33,7 +36,7 @@
+     );
+   }
+ 
+-  if (!body.username?.trim()) {
++  if (!caller.username) {
+     return NextResponse.json(
+       { error: 'Bad Request', message: 'username is required.' },
+       { status: 400 }
+@@ -41,7 +44,7 @@
+   }
+ 
+   try {
+-    const deleted = await deleteDocument(documentId, body.username.trim());
++    const deleted = await deleteDocument(documentId, caller.username);
+ 
+     if (!deleted) {
+       return NextResponse.json(
+diff -ruN base/src/app/api/documents/download/[documentId]/route.ts work/src/app/api/documents/download/[documentId]/route.ts
+--- base/src/app/api/documents/download/[documentId]/route.ts	2026-11-02 18:35:15.867969388 +0000
++++ work/src/app/api/documents/download/[documentId]/route.ts	2026-11-02 18:36:22.967649974 +0000
+@@ -1,5 +1,6 @@
+ import { NextRequest, NextResponse } from 'next/server';
+ import { getDocumentById } from '@/libs/documentsRepository';
++import { requireUser } from '@/libs/currentUser';
+ 
+ function isValidUuid(value: string): boolean {
+   return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
+@@ -13,6 +14,8 @@
+   _request: NextRequest,
+   { params }: { params: Promise<{ documentId: string }> }
+ ) {
++  const caller = await requireUser();
++  if ('response' in caller) return caller.response;
+   const { documentId } = await params;
+ 
+   if (!isValidUuid(documentId)) {
+diff -ruN base/src/app/api/documents/route.ts work/src/app/api/documents/route.ts
+--- base/src/app/api/documents/route.ts	2026-11-02 18:35:15.867992096 +0000
++++ work/src/app/api/documents/route.ts	2026-11-02 18:36:44.646141892 +0000
+@@ -9,6 +9,7 @@
+   isValidCategory,
+   DOCUMENT_CATEGORIES,
+ } from '@/libs/documentConfig';
++import { requireUser } from '@/libs/currentUser';
+ 
+ // Disable Next.js default 4MB body limit so we can handle up to 2MB ourselves
+ /* export const config = {
+@@ -20,6 +21,8 @@
+  * Multipart form data: contactId, username, category, file
+  */
+ export async function POST(request: NextRequest) {
++  const caller = await requireUser();
++  if ('response' in caller) return caller.response;
+   let formData: FormData;
+   try {
+     formData = await request.formData();
+@@ -31,7 +34,7 @@
+   }
+ 
+   const contactId = formData.get('contactId') as string;
+-  const username = formData.get('username') as string;
++  const username = caller.username;
+   const category = formData.get('category') as string;
+   const file = formData.get('file') as File | null;
+   const outcomeId = formData.get('outcomeId') as string | null;
+diff -ruN base/src/app/api/headlines/[contactId]/route.ts work/src/app/api/headlines/[contactId]/route.ts
+--- base/src/app/api/headlines/[contactId]/route.ts	2026-11-02 18:35:15.864957241 +0000
++++ work/src/app/api/headlines/[contactId]/route.ts	2026-11-02 18:36:22.964604531 +0000
+@@ -1,6 +1,7 @@
+ import { isValidContactId } from '@/libs/contactId';
+ import { NextRequest, NextResponse } from 'next/server';
+ import { getHighlightsByContactId } from '@/libs/highlightsRepository';
++import { requireUser } from '@/libs/currentUser';
+ 
+ /**
+  * GET /api/highlights/:contactId
+@@ -10,6 +11,8 @@
+   _request: NextRequest,
+   { params }: { params: Promise<{ contactId: string }> }
+ ) {
++  const caller = await requireUser();
++  if ('response' in caller) return caller.response;
+   const { contactId } = await params;
+   if (!isValidContactId(contactId)) {
+     return NextResponse.json(
+diff -ruN base/src/app/api/highlightnotes/[contactId]/route.ts work/src/app/api/highlightnotes/[contactId]/route.ts
+--- base/src/app/api/highlightnotes/[contactId]/route.ts	2026-11-02 18:35:15.867303049 +0000
++++ work/src/app/api/highlightnotes/[contactId]/route.ts	2026-11-02 18:36:22.958508881 +0000
+@@ -1,6 +1,7 @@
+ import { isValidContactId } from '@/libs/contactId';
+ import { NextRequest, NextResponse } from 'next/server';
+ import { getNotesByContactId } from '@/libs/highlightNotesRepository';
++import { requireUser } from '@/libs/currentUser';
+ 
+ 
+ /**
+@@ -11,6 +12,8 @@
+   _request: NextRequest,
+   { params }: { params: Promise<{ contactId: string }> }
+ ) {
++  const caller = await requireUser();
++  if ('response' in caller) return caller.response;
+   const { contactId } = await params;
+   if (!isValidContactId(contactId)) {
+     return NextResponse.json(
+diff -ruN base/src/app/api/highlightnotes/note/[noteId]/route.ts work/src/app/api/highlightnotes/note/[noteId]/route.ts
+--- base/src/app/api/highlightnotes/note/[noteId]/route.ts	2026-11-02 18:35:15.867269461 +0000
++++ work/src/app/api/highlightnotes/note/[noteId]/route.ts	2026-11-02 18:37:07.711000259 +0000
+@@ -1,5 +1,6 @@
+ import { NextRequest, NextResponse } from 'next/server';
+ import { updateNote, deleteNote } from '@/libs/highlightNotesRepository';
++import { requireUser } from '@/libs/currentUser';
+ 
+ function isValidUuid(value: string): boolean {
+   return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
+@@ -15,6 +16,8 @@
+   request: NextRequest,
+   { params }: { params: Promise<{ noteId: string }> }
+ ) {
++  const caller = await requireUser();
++  if ('response' in caller) return caller.response;
+   const { noteId } = await params;
+ 
+   if (!isValidUuid(noteId)) {
+@@ -34,7 +37,8 @@
+     );
+   }
+ 
+-  const { username, comment } = body;
++  const { comment } = body;
++  const username = caller.username;   // from the session, never the request
+ 
+   if (!username?.trim()) {
+     return NextResponse.json(
+@@ -79,6 +83,8 @@
+   request: NextRequest,
+   { params }: { params: Promise<{ noteId: string }> }
+ ) {
++  const caller = await requireUser();
++  if ('response' in caller) return caller.response;
+   const { noteId } = await params;
+ 
+   if (!isValidUuid(noteId)) {
+@@ -98,7 +104,7 @@
+     );
+   }
+ 
+-  const { username } = body;
++  const username = caller.username;   // from the session, never the request
+ 
+   if (!username?.trim()) {
+     return NextResponse.json(
+diff -ruN base/src/app/api/highlightnotes/route.ts work/src/app/api/highlightnotes/route.ts
+--- base/src/app/api/highlightnotes/route.ts	2026-11-02 18:35:15.867322415 +0000
++++ work/src/app/api/highlightnotes/route.ts	2026-11-02 18:36:44.633502841 +0000
+@@ -1,5 +1,6 @@
+ import { NextRequest, NextResponse } from 'next/server';
+ import { createNote } from '@/libs/highlightNotesRepository';
++import { requireUser } from '@/libs/currentUser';
+ 
+ function isValidUuid(value: string): boolean {
+   return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
+@@ -16,6 +17,8 @@
+  * }
+  */
+ export async function POST(request: NextRequest) {
++  const caller = await requireUser();
++  if ('response' in caller) return caller.response;
+   let body: { contactId?: string; username?: string; comment?: string };
+ 
+   try {
+@@ -27,7 +30,8 @@
+     );
+   }
+ 
+-  const { contactId, username, comment } = body;
++  const { contactId, comment } = body;
++  const username = caller.username;   // from the session, never the request
+ 
+   if (!contactId || !isValidUuid(contactId)) {
+     return NextResponse.json(
+diff -ruN base/src/app/api/links/[contactId]/route.ts work/src/app/api/links/[contactId]/route.ts
+--- base/src/app/api/links/[contactId]/route.ts	2026-11-02 18:35:15.866877719 +0000
++++ work/src/app/api/links/[contactId]/route.ts	2026-11-02 18:36:22.965597963 +0000
+@@ -1,12 +1,15 @@
+ import { isValidContactId } from '@/libs/contactId';
+ import { NextRequest, NextResponse } from 'next/server';
+ import { getLinksByContactId } from '@/libs/linksRepository';
++import { requireUser } from '@/libs/currentUser';
+ 
+ /** GET /api/links/:contactId — all links for a contact, with outcome ids */
+ export async function GET(
+   _request: NextRequest,
+   { params }: { params: Promise<{ contactId: string }> }
+ ) {
++  const caller = await requireUser();
++  if ('response' in caller) return caller.response;
+   const { contactId } = await params;
+   if (!isValidContactId(contactId)) {
+     return NextResponse.json(
+diff -ruN base/src/app/api/links/link/[linkId]/route.ts work/src/app/api/links/link/[linkId]/route.ts
+--- base/src/app/api/links/link/[linkId]/route.ts	2026-11-02 18:35:15.866985557 +0000
++++ work/src/app/api/links/link/[linkId]/route.ts	2026-11-02 18:36:44.644396229 +0000
+@@ -1,6 +1,7 @@
+ import { NextRequest, NextResponse } from 'next/server';
+ import { updateLink, deleteLink } from '@/libs/linksRepository';
+ import { parseOutcome, isOutcomeFkError } from '@/libs/outcomeValidation';
++import { requireUser } from '@/libs/currentUser';
+ 
+ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+ type Ctx = { params: Promise<{ linkId: string }> };
+@@ -15,6 +16,8 @@
+  * exactly what was happening before (patchLink never sent them).
+  */
+ export async function PATCH(request: NextRequest, { params }: Ctx) {
++  const caller = await requireUser();
++  if ('response' in caller) return caller.response;
+   const { linkId } = await params;
+   if (!UUID.test(linkId)) {
+     return NextResponse.json(
+@@ -32,7 +35,7 @@
+       { error: 'Bad Request', message: 'Invalid JSON body' }, { status: 400 });
+   }
+ 
+-  const username = body.username?.trim() ?? '';
++  const username = caller.username;
+   const reference = body.reference?.trim() ?? '';
+   const label = body.label?.trim() ?? '';
+ 
+@@ -73,6 +76,8 @@
+ 
+ /** DELETE /api/links/link/:linkId — Body: { username } (unchanged) */
+ export async function DELETE(request: NextRequest, { params }: Ctx) {
++  const caller = await requireUser();
++  if ('response' in caller) return caller.response;
+   const { linkId } = await params;
+   if (!UUID.test(linkId)) {
+     return NextResponse.json(
+diff -ruN base/src/app/api/links/route.ts work/src/app/api/links/route.ts
+--- base/src/app/api/links/route.ts	2026-11-02 18:35:15.867006540 +0000
++++ work/src/app/api/links/route.ts	2026-11-02 18:36:44.644056935 +0000
+@@ -2,6 +2,7 @@
+ import { NextRequest, NextResponse } from 'next/server';
+ import { createLink } from '@/libs/linksRepository';
+ import { parseOutcome, isOutcomeFkError } from '@/libs/outcomeValidation';
++import { requireUser } from '@/libs/currentUser';
+ 
+ 
+ /**
+@@ -9,6 +10,8 @@
+  * Body: { contactId, username, reference, label, outcomeId?, subOutcomeId? }
+  */
+ export async function POST(request: NextRequest) {
++  const caller = await requireUser();
++  if ('response' in caller) return caller.response;
+   let body: {
+     contactId?: string; username?: string; reference?: string; label?: string; outcomeId?: number | null ; subOutcomeId?: number | null ;
+   };
+@@ -20,7 +23,7 @@
+   }
+ 
+   const contactId = body.contactId ?? '';
+-  const username = body.username?.trim() ?? '';
++  const username = caller.username;
+   const reference = body.reference?.trim() ?? '';
+   const label = body.label?.trim() ?? '';
+ 
+diff -ruN base/src/app/api/lookup/[kind]/route.ts work/src/app/api/lookup/[kind]/route.ts
+--- base/src/app/api/lookup/[kind]/route.ts	2026-11-02 18:35:15.865592602 +0000
++++ work/src/app/api/lookup/[kind]/route.ts	2026-11-02 18:36:22.960971916 +0000
+@@ -1,6 +1,7 @@
+ import { NextRequest, NextResponse } from 'next/server';
+ import { listActiveLookup } from '@/libs/adminLookupRepository';
+ import type { LookupKind } from '@/types/adminLookup';
++import { requireUser } from '@/libs/currentUser';
+ 
+ // Public reference endpoint — tags & areas only (teams stay admin-listed).
+ // Any authenticated user can read; returns ACTIVE rows only.
+@@ -11,6 +12,8 @@
+   _request: NextRequest,
+   { params }: { params: Promise<{ kind: string }> }
+ ) {
++  const caller = await requireUser();
++  if ('response' in caller) return caller.response;
+   const rawKind = (await params).kind;
+   const kind = (PUBLIC_KINDS as string[]).includes(rawKind)
+     ? (rawKind as LookupKind) : null;
+diff -ruN base/src/app/api/lookups/outcomes/route.ts work/src/app/api/lookups/outcomes/route.ts
+--- base/src/app/api/lookups/outcomes/route.ts	2026-11-02 18:35:15.861097488 +0000
++++ work/src/app/api/lookups/outcomes/route.ts	2026-11-02 18:36:22.964342152 +0000
+@@ -1,8 +1,11 @@
+ import { NextResponse } from 'next/server';
+ import { getOutcomeTree } from '@/libs/outcomeRepository';
++import { requireUser } from '@/libs/currentUser';
+ 
+ /** GET /api/lookups/outcomes — the full outcome → sub-outcome tree */
+ export async function GET() {
++  const caller = await requireUser();
++  if ('response' in caller) return caller.response;
+   try {
+     return NextResponse.json({ data: await getOutcomeTree() });
+   } catch (err) {
+diff -ruN base/src/app/api/meeting-groups/[groupId]/csv/route.ts work/src/app/api/meeting-groups/[groupId]/csv/route.ts
+--- base/src/app/api/meeting-groups/[groupId]/csv/route.ts	2026-11-02 18:35:15.866075699 +0000
++++ work/src/app/api/meeting-groups/[groupId]/csv/route.ts	2026-11-02 18:36:44.636251533 +0000
+@@ -3,6 +3,7 @@
+   getGroupMembers, getGroupName, isGroupMember,
+ } from '@/libs/meetingGroupsRepository';
+ import { usernameToEmail } from '@/libs/email';
++import { requireUser } from '@/libs/currentUser';
+ 
+ function isValidUuid(value: string): boolean {
+   return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
+@@ -23,8 +24,10 @@
+   request: NextRequest,
+   { params }: { params: Promise<{ groupId: string }> }
+ ) {
++  const caller = await requireUser();
++  if ('response' in caller) return caller.response;
+   const { groupId } = await params;
+-  const username = request.nextUrl.searchParams.get('username');
++  const username = caller.username;
+ 
+   if (!isValidUuid(groupId)) {
+     return NextResponse.json(
+diff -ruN base/src/app/api/meeting-groups/[groupId]/duplicate/route.ts work/src/app/api/meeting-groups/[groupId]/duplicate/route.ts
+--- base/src/app/api/meeting-groups/[groupId]/duplicate/route.ts	2026-11-02 18:35:15.866020063 +0000
++++ work/src/app/api/meeting-groups/[groupId]/duplicate/route.ts	2026-11-02 18:36:44.636003666 +0000
+@@ -1,5 +1,6 @@
+ import { NextRequest, NextResponse } from 'next/server';
+ import { duplicateMeetingGroup } from '@/libs/meetingGroupsRepository';
++import { requireUser } from '@/libs/currentUser';
+ 
+ function isValidUuid(value: string): boolean {
+   return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
+@@ -15,6 +16,8 @@
+   request: NextRequest,
+   { params }: { params: Promise<{ groupId: string }> }
+ ) {
++  const caller = await requireUser();
++  if ('response' in caller) return caller.response;
+   const { groupId } = await params;
+ 
+   if (!isValidUuid(groupId)) {
+@@ -34,7 +37,7 @@
+     );
+   }
+ 
+-  if (!body.username?.trim()) {
++  if (!caller.username) {
+     return NextResponse.json(
+       { error: 'Bad Request', message: 'username is required.' },
+       { status: 400 }
+@@ -42,7 +45,7 @@
+   }
+ 
+   try {
+-    const copy = await duplicateMeetingGroup(groupId, body.username.trim());
++    const copy = await duplicateMeetingGroup(groupId, caller.username);
+     if (!copy) {
+       return NextResponse.json(
+         { error: 'Forbidden', message: 'You must be a member of the group to duplicate it.' },
+diff -ruN base/src/app/api/meeting-groups/[groupId]/members/[memberId]/route.ts work/src/app/api/meeting-groups/[groupId]/members/[memberId]/route.ts
+--- base/src/app/api/meeting-groups/[groupId]/members/[memberId]/route.ts	2026-11-02 18:35:15.866149246 +0000
++++ work/src/app/api/meeting-groups/[groupId]/members/[memberId]/route.ts	2026-11-02 18:37:07.711613803 +0000
+@@ -5,6 +5,7 @@
+ } from '@/libs/meetingGroupsRepository';
+ import { groupChangeAlert } from '@/libs/email';
+ import type { GroupRole } from '@/types/meetingGroup';
++import { requireUser } from '@/libs/currentUser';
+ 
+ function isValidUuid(value: string): boolean {
+   return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
+@@ -19,6 +20,8 @@
+   request: NextRequest,
+   { params }: { params: Promise<{ groupId: string; memberId: string }> }
+ ) {
++  const caller = await requireUser();
++  if ('response' in caller) return caller.response;
+   const { groupId, memberId } = await params;
+ 
+   if (!isValidUuid(groupId) || !isValidUuid(memberId)) {
+@@ -38,7 +41,7 @@
+     );
+   }
+ 
+-  if (!body.username?.trim()) {
++  if (!caller.username) {
+     return NextResponse.json(
+       { error: 'Bad Request', message: 'username is required.' },
+       { status: 400 }
+@@ -46,7 +49,7 @@
+   }
+ 
+   try {
+-    const result = await removeGroupMember(groupId, memberId, body.username.trim());
++    const result = await removeGroupMember(groupId, memberId, caller.username);
+     if (!result.removed) {
+       return NextResponse.json(
+         {
+@@ -61,7 +64,7 @@
+     Promise.all([getGroupAdminUsernames(groupId), getGroupName(groupId)])
+       .then(([admins, name]) =>
+         groupChangeAlert(
+-          admins, name, body.username!.trim(),
++          admins, name, caller.username,
+           `${result.removedUsername} was removed from the group`
+         )
+       ).catch(console.error);
+@@ -85,6 +88,8 @@
+   request: NextRequest,
+   { params }: { params: Promise<{ groupId: string; memberId: string }> }
+ ) {
++  const caller = await requireUser();
++  if ('response' in caller) return caller.response;
+   const { groupId, memberId } = await params;
+ 
+   if (!isValidUuid(groupId) || !isValidUuid(memberId)) {
+@@ -106,7 +111,7 @@
+ 
+   const role: GroupRole = body.role === 'admin' ? 'admin' : 'viewer';
+ 
+-  if (!body.username?.trim()) {
++  if (!caller.username) {
+     return NextResponse.json(
+       { error: 'Bad Request', message: 'username is required.' },
+       { status: 400 }
+@@ -114,7 +119,7 @@
+   }
+ 
+   try {
+-    const result = await setMemberRole(groupId, memberId, body.username.trim(), role);
++    const result = await setMemberRole(groupId, memberId, caller.username, role);
+     if (!result.updated) {
+       return NextResponse.json(
+         {
+@@ -129,7 +134,7 @@
+     Promise.all([getGroupAdminUsernames(groupId), getGroupName(groupId)])
+       .then(([admins, name]) =>
+         groupChangeAlert(
+-          admins, name, body.username!.trim(),
++          admins, name, caller.username,
+           `${result.username}'s role was changed to ${role}`
+         )
+       ).catch(console.error);
+diff -ruN base/src/app/api/meeting-groups/[groupId]/members/route.ts work/src/app/api/meeting-groups/[groupId]/members/route.ts
+--- base/src/app/api/meeting-groups/[groupId]/members/route.ts	2026-11-02 18:35:15.866168542 +0000
++++ work/src/app/api/meeting-groups/[groupId]/members/route.ts	2026-11-02 18:36:44.636493007 +0000
+@@ -4,6 +4,7 @@
+ } from '@/libs/meetingGroupsRepository';
+ import { groupChangeAlert } from '@/libs/email';
+ import type { GroupRole } from '@/types/meetingGroup';
++import { requireUser } from '@/libs/currentUser';
+ 
+ function isValidUuid(value: string): boolean {
+   return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
+@@ -18,6 +19,8 @@
+   request: NextRequest,
+   { params }: { params: Promise<{ groupId: string }> }
+ ) {
++  const caller = await requireUser();
++  if ('response' in caller) return caller.response;
+   const { groupId } = await params;
+ 
+   if (!isValidUuid(groupId)) {
+@@ -37,7 +40,8 @@
+     );
+   }
+ 
+-  const { requestingUser, newUsername } = body;
++  const { newUsername } = body;
++  const requestingUser = caller.username;   // from the session, never the request
+   const role: GroupRole = body.role === 'admin' ? 'admin' : 'viewer';
+ 
+   if (!requestingUser?.trim() || !newUsername?.trim()) {
+diff -ruN base/src/app/api/meeting-groups/[groupId]/route.ts work/src/app/api/meeting-groups/[groupId]/route.ts
+--- base/src/app/api/meeting-groups/[groupId]/route.ts	2026-11-02 18:35:15.866042106 +0000
++++ work/src/app/api/meeting-groups/[groupId]/route.ts	2026-11-02 18:36:44.635690714 +0000
+@@ -4,6 +4,7 @@
+   getGroupAdminUsernames, getGroupName,
+ } from '@/libs/meetingGroupsRepository';
+ import { groupChangeAlert } from '@/libs/email';
++import { requireUser } from '@/libs/currentUser';
+ 
+ function isValidUuid(value: string): boolean {
+   return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
+@@ -17,6 +18,8 @@
+   _request: NextRequest,
+   { params }: { params: Promise<{ groupId: string }> }
+ ) {
++  const caller = await requireUser();
++  if ('response' in caller) return caller.response;
+   const { groupId } = await params;
+ 
+   if (!isValidUuid(groupId)) {
+@@ -47,6 +50,8 @@
+   request: NextRequest,
+   { params }: { params: Promise<{ groupId: string }> }
+ ) {
++  const caller = await requireUser();
++  if ('response' in caller) return caller.response;
+   const { groupId } = await params;
+ 
+   if (!isValidUuid(groupId)) {
+@@ -66,7 +71,8 @@
+     );
+   }
+ 
+-  const { username, name } = body;
++  const { name } = body;
++  const username = caller.username;   // from the session, never the request
+ 
+   if (!username?.trim() || !name?.trim()) {
+     return NextResponse.json(
+@@ -115,6 +121,8 @@
+   request: NextRequest,
+   { params }: { params: Promise<{ groupId: string }> }
+ ) {
++  const caller = await requireUser();
++  if ('response' in caller) return caller.response;
+   const { groupId } = await params;
+ 
+   if (!isValidUuid(groupId)) {
+@@ -134,7 +142,7 @@
+     );
+   }
+ 
+-  if (!body.username?.trim()) {
++  if (!caller.username) {
+     return NextResponse.json(
+       { error: 'Bad Request', message: 'username is required.' },
+       { status: 400 }
+@@ -142,7 +150,7 @@
+   }
+ 
+   try {
+-    const deleted = await deleteGroup(groupId, body.username.trim());
++    const deleted = await deleteGroup(groupId, caller.username);
+     if (!deleted) {
+       return NextResponse.json(
+         { error: 'Forbidden', message: 'Only the creator can delete this group.' },
+diff -ruN base/src/app/api/meeting-groups/route.ts work/src/app/api/meeting-groups/route.ts
+--- base/src/app/api/meeting-groups/route.ts	2026-11-02 18:35:15.866262905 +0000
++++ work/src/app/api/meeting-groups/route.ts	2026-11-02 18:36:44.635294369 +0000
+@@ -1,12 +1,15 @@
+ import { NextRequest, NextResponse } from 'next/server';
+ import { getUserGroups, createGroup } from '@/libs/meetingGroupsRepository';
++import { requireUser } from '@/libs/currentUser';
+ 
+ /**
+  * GET /api/meeting-groups?username=xxx
+  * Returns the groups the user belongs to (with their role).
+  */
+ export async function GET(request: NextRequest) {
+-  const username = request.nextUrl.searchParams.get('username');
++  const caller = await requireUser();
++  if ('response' in caller) return caller.response;
++  const username = caller.username;
+ 
+   if (!username?.trim()) {
+     return NextResponse.json(
+@@ -33,6 +36,8 @@
+  * Any user can create a group; they become its creator and first admin.
+  */
+ export async function POST(request: NextRequest) {
++  const caller = await requireUser();
++  if ('response' in caller) return caller.response;
+   let body: { name?: string; username?: string };
+   try {
+     body = await request.json();
+@@ -43,7 +48,8 @@
+     );
+   }
+ 
+-  const { name, username } = body;
++  const { name } = body;
++  const username = caller.username;   // from the session, never the request
+ 
+   if (!name?.trim()) {
+     return NextResponse.json(
+diff -ruN base/src/app/api/meeting-groups/tags/[meetingId]/route.ts work/src/app/api/meeting-groups/tags/[meetingId]/route.ts
+--- base/src/app/api/meeting-groups/tags/[meetingId]/route.ts	2026-11-02 18:35:15.866228859 +0000
++++ work/src/app/api/meeting-groups/tags/[meetingId]/route.ts	2026-11-02 18:36:44.637333922 +0000
+@@ -1,5 +1,6 @@
+ import { NextRequest, NextResponse } from 'next/server';
+ import { getMeetingTags, removeMeetingTag } from '@/libs/meetingGroupsRepository';
++import { requireUser } from '@/libs/currentUser';
+ 
+ function isValidUuid(value: string): boolean {
+   return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
+@@ -13,6 +14,8 @@
+   _request: NextRequest,
+   { params }: { params: Promise<{ meetingId: string }> }
+ ) {
++  const caller = await requireUser();
++  if ('response' in caller) return caller.response;
+   const { meetingId } = await params;
+ 
+   if (!isValidUuid(meetingId)) {
+@@ -43,6 +46,8 @@
+   request: NextRequest,
+   { params }: { params: Promise<{ meetingId: string }> }
+ ) {
++  const caller = await requireUser();
++  if ('response' in caller) return caller.response;
+   await params; // meetingId not needed — tagId identifies the row
+ 
+   let body: { tagId?: string; username?: string };
+@@ -61,7 +66,7 @@
+       { status: 400 }
+     );
+   }
+-  if (!body.username?.trim()) {
++  if (!caller.username) {
+     return NextResponse.json(
+       { error: 'Bad Request', message: 'username is required.' },
+       { status: 400 }
+@@ -69,7 +74,7 @@
+   }
+ 
+   try {
+-    const removed = await removeMeetingTag(body.tagId, body.username.trim());
++    const removed = await removeMeetingTag(body.tagId, caller.username);
+     if (!removed) {
+       return NextResponse.json(
+         { error: 'Forbidden', message: 'You can only remove tags you created.' },
+diff -ruN base/src/app/api/meeting-groups/tags/route.ts work/src/app/api/meeting-groups/tags/route.ts
+--- base/src/app/api/meeting-groups/tags/route.ts	2026-11-02 18:35:15.866245848 +0000
++++ work/src/app/api/meeting-groups/tags/route.ts	2026-11-02 18:36:44.637050742 +0000
+@@ -3,6 +3,7 @@
+   tagMeeting, getGroupMemberUsernames, getGroupName,
+ } from '@/libs/meetingGroupsRepository';
+ import { meetingTaggedNotification } from '@/libs/email';
++import { requireUser } from '@/libs/currentUser';
+ 
+ function isValidUuid(value: string): boolean {
+   return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
+@@ -15,6 +16,8 @@
+  * group are notified by email.
+  */
+ export async function POST(request: NextRequest) {
++  const caller = await requireUser();
++  if ('response' in caller) return caller.response;
+   let body: { meetingId?: string; groupId?: string; taggedBy?: string };
+   try {
+     body = await request.json();
+@@ -25,7 +28,8 @@
+     );
+   }
+ 
+-  const { meetingId, groupId, taggedBy } = body;
++  const { meetingId, groupId } = body;
++  const taggedBy = caller.username;   // from the session, never the request
+ 
+   if (!meetingId || !isValidUuid(meetingId)) {
+     return NextResponse.json(
+diff -ruN base/src/app/api/meetings/[contactId]/route.ts work/src/app/api/meetings/[contactId]/route.ts
+--- base/src/app/api/meetings/[contactId]/route.ts	2026-11-02 18:35:15.867622894 +0000
++++ work/src/app/api/meetings/[contactId]/route.ts	2026-11-02 18:36:22.959192131 +0000
+@@ -1,6 +1,7 @@
+ import { isValidContactId } from '@/libs/contactId';
+ import { NextRequest, NextResponse } from 'next/server';
+ import { getMeetingsByContactId } from '@/libs/meetingsRepository';
++import { requireUser } from '@/libs/currentUser';
+ 
+ /**
+  * GET /api/meetings/:contactId
+@@ -10,6 +11,8 @@
+   _request: NextRequest,
+   { params }: { params: Promise<{ contactId: string }> }
+ ) {
++  const caller = await requireUser();
++  if ('response' in caller) return caller.response;
+   const { contactId } = await params;
+ 
+   if (!isValidContactId(contactId)) {
+diff -ruN base/src/app/api/meetings/meeting/[meetingId]/links/route.ts work/src/app/api/meetings/meeting/[meetingId]/links/route.ts
+--- base/src/app/api/meetings/meeting/[meetingId]/links/route.ts	1970-01-01 01:00:00.000000000 +0100
++++ work/src/app/api/meetings/meeting/[meetingId]/links/route.ts	2026-11-02 18:39:10.630969827 +0000
+@@ -0,0 +1,92 @@
++import { NextRequest, NextResponse } from 'next/server';
++import { addMeetingLink, deleteMeetingLink } from '@/libs/meetingsRepository';
++import { requireUser } from '@/libs/currentUser';
++
++function isValidUuid(value: string): boolean {
++  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
++}
++
++/**
++ * POST /api/meetings/meeting/:meetingId/links
++ * Body: { reference }. Only the meeting's owner can add links.
++ */
++export async function POST(
++  request: NextRequest,
++  { params }: { params: Promise<{ meetingId: string }> }
++) {
++  const caller = await requireUser();
++  if ('response' in caller) return caller.response;
++  const { meetingId } = await params;
++
++  if (!isValidUuid(meetingId)) {
++    return NextResponse.json(
++      { error: 'Bad Request', message: `"${meetingId}" is not a valid meeting ID.` },
++      { status: 400 }
++    );
++  }
++
++  let body: { reference?: string };
++  try {
++    body = await request.json();
++  } catch {
++    return NextResponse.json({ error: 'Bad Request', message: 'Invalid JSON body' }, { status: 400 });
++  }
++
++  if (!body.reference?.trim()) {
++    return NextResponse.json({ error: 'Bad Request', message: 'reference is required.' }, { status: 400 });
++  }
++
++  try {
++    const link = await addMeetingLink(meetingId, body.reference.trim(), caller.username);
++    if (!link) {
++      return NextResponse.json(
++        { error: 'Not Found', message: 'Meeting not found, or it is not yours.' }, { status: 404 });
++    }
++    return NextResponse.json({ data: link }, { status: 201 });
++  } catch (err) {
++    console.error(`POST /api/meetings/meeting/${meetingId}/links error:`, err);
++    return NextResponse.json({ error: 'Internal Server Error', message: 'An unexpected error occurred' }, { status: 500 });
++  }
++}
++
++/**
++ * DELETE /api/meetings/meeting/:meetingId/links
++ * Body: { meetingLinkId }. Only the meeting's owner can remove links.
++ */
++export async function DELETE(
++  request: NextRequest,
++  { params }: { params: Promise<{ meetingId: string }> }
++) {
++  const caller = await requireUser();
++  if ('response' in caller) return caller.response;
++  const { meetingId } = await params;
++
++  if (!isValidUuid(meetingId)) {
++    return NextResponse.json({ error: 'Bad Request', message: 'Invalid meeting ID.' }, { status: 400 });
++  }
++
++  let body: { meetingLinkId?: string };
++  try {
++    body = await request.json();
++  } catch {
++    return NextResponse.json({ error: 'Bad Request', message: 'Invalid JSON body' }, { status: 400 });
++  }
++
++  if (!body.meetingLinkId || !isValidUuid(body.meetingLinkId)) {
++    return NextResponse.json({ error: 'Bad Request', message: 'A valid meetingLinkId is required.' }, { status: 400 });
++  }
++
++  try {
++    const deleted = await deleteMeetingLink(meetingId, body.meetingLinkId, caller.username);
++    if (!deleted) {
++      return NextResponse.json(
++        { error: 'Not Found', message: 'Meeting link not found, or it is not yours.' },
++        { status: 404 }
++      );
++    }
++    return NextResponse.json({ success: true });
++  } catch (err) {
++    console.error('DELETE meeting link error:', err);
++    return NextResponse.json({ error: 'Internal Server Error', message: 'An unexpected error occurred' }, { status: 500 });
++  }
++}
+diff -ruN base/src/app/api/meetings/meeting/[meetingId]/route.ts work/src/app/api/meetings/meeting/[meetingId]/route.ts
+--- base/src/app/api/meetings/meeting/[meetingId]/route.ts	2026-11-02 18:35:15.867721773 +0000
++++ work/src/app/api/meetings/meeting/[meetingId]/route.ts	2026-11-02 18:36:44.634548575 +0000
+@@ -2,6 +2,7 @@
+ import { updateMeeting, deleteMeeting } from '@/libs/meetingsRepository';
+ import { parseOutcome, isOutcomeFkError } from '@/libs/outcomeValidation';
+ import { parseAssessment } from '@/libs/meetingAssessmentConfig';
++import { requireUser } from '@/libs/currentUser';
+ 
+ function isValidUuid(value: string): boolean {
+   return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
+@@ -20,6 +21,8 @@
+   request: NextRequest,
+   { params }: { params: Promise<{ meetingId: string }> }
+ ) {
++  const caller = await requireUser();
++  if ('response' in caller) return caller.response;
+   const { meetingId } = await params;
+ 
+   if (!isValidUuid(meetingId)) {
+@@ -36,7 +39,8 @@
+     return NextResponse.json({ error: 'Bad Request', message: 'Invalid JSON body' }, { status: 400 });
+   }
+ 
+-  const { username, meetingDate, title, notes, score1, score2, score3, score4, outcomeId, subOutcomeId  } = body;
++  const { meetingDate, title, notes, score1, score2, score3, score4, outcomeId, subOutcomeId } = body;
++  const username = caller.username;   // from the session, never the request
+ 
+   if (!username || String(username).trim() === '') {
+     return NextResponse.json({ error: 'Bad Request', message: 'username is required.' }, { status: 400 });
+@@ -96,6 +100,8 @@
+   request: NextRequest,
+   { params }: { params: Promise<{ meetingId: string }> }
+ ) {
++  const caller = await requireUser();
++  if ('response' in caller) return caller.response;
+   const { meetingId } = await params;
+ 
+   if (!isValidUuid(meetingId)) {
+@@ -112,12 +118,12 @@
+     return NextResponse.json({ error: 'Bad Request', message: 'Invalid JSON body' }, { status: 400 });
+   }
+ 
+-  if (!body.username?.trim()) {
++  if (!caller.username) {
+     return NextResponse.json({ error: 'Bad Request', message: 'username is required.' }, { status: 400 });
+   }
+ 
+   try {
+-    const deleted = await deleteMeeting(meetingId, body.username.trim());
++    const deleted = await deleteMeeting(meetingId, caller.username);
+     if (!deleted) {
+       return NextResponse.json(
+         { error: 'Forbidden', message: 'Meeting not found or you are not the author.' },
+diff -ruN base/src/app/api/meetings/mymeetings/[userName]/route.ts work/src/app/api/meetings/mymeetings/[userName]/route.ts
+--- base/src/app/api/meetings/mymeetings/[userName]/route.ts	2026-11-02 18:35:15.867563263 +0000
++++ work/src/app/api/meetings/mymeetings/[userName]/route.ts	2026-11-02 18:36:51.653342614 +0000
+@@ -1,5 +1,6 @@
+ import { NextRequest, NextResponse } from 'next/server';
+ import { getMeetingsByUserName} from '@/libs/meetingsRepository';
++import { requireUser } from '@/libs/currentUser';
+ 
+ function isValidUuid(value: string): boolean {
+   return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
+@@ -13,7 +14,10 @@
+   _request: NextRequest,
+   { params }: { params: Promise<{ userName: string }> }
+ ) {
+-  const { userName } = await params;
++  const caller = await requireUser();
++  if ('response' in caller) return caller.response;
++  await params;   // the URL name is ignored: you can only list your own
++  const userName = caller.username;
+ 
+   try {
+     const notes = await getMeetingsByUserName(userName);
+diff -ruN base/src/app/api/meetings/route.ts work/src/app/api/meetings/route.ts
+--- base/src/app/api/meetings/route.ts	2026-11-02 18:35:15.867740594 +0000
++++ work/src/app/api/meetings/route.ts	2026-11-02 18:36:44.634208629 +0000
+@@ -3,6 +3,7 @@
+ import { createMeeting } from '@/libs/meetingsRepository';
+ import { parseOutcome, isOutcomeFkError } from '@/libs/outcomeValidation';
+ import { parseAssessment } from '@/libs/meetingAssessmentConfig';
++import { requireUser } from '@/libs/currentUser';
+ 
+ function clampScore(value: unknown): number { 
+   const n = parseInt(String(value), 10); 
+@@ -14,7 +15,9 @@
+  * Body: { contactId, username, meetingDate, title, notes, score1, score2, score3, score4, outcomeId, subOutcomeId  } 
+  */ 
+ 
+-export async function POST(request: NextRequest) { 
++export async function POST(request: NextRequest) {
++  const caller = await requireUser();
++  if ('response' in caller) return caller.response; 
+   let body: Record<string, unknown>; 
+ 
+   try { 
+@@ -25,7 +28,8 @@
+       { status: 400 } 
+     ); 
+   } 
+-  const { contactId, username, meetingDate, title, notes, score1, score2, score3, score4, outcomeId, subOutcomeId } = body;
++  const { contactId, meetingDate, title, notes, score1, score2, score3, score4, outcomeId, subOutcomeId } = body;
++  const username = caller.username;   // from the session, never the request
+ 
+   if (!contactId || !isValidContactId(String(contactId))) { 
+ 
+diff -ruN base/src/app/api/minister-meetings/[ministerId]/route.ts work/src/app/api/minister-meetings/[ministerId]/route.ts
+--- base/src/app/api/minister-meetings/[ministerId]/route.ts	2026-11-02 18:35:15.866391716 +0000
++++ work/src/app/api/minister-meetings/[ministerId]/route.ts	2026-11-02 18:36:22.952608277 +0000
+@@ -1,5 +1,6 @@
+ import { NextRequest, NextResponse } from 'next/server';
+ import { getMinisterMeetings } from '@/libs/ministerMeetingsRepository';
++import { requireUser } from '@/libs/currentUser';
+ 
+ /**
+  * GET /api/minister-meetings/:ministerId
+@@ -9,6 +10,8 @@
+   _request: NextRequest,
+   { params }: { params: Promise<{ ministerId: string }> }
+ ) {
++  const caller = await requireUser();
++  if ('response' in caller) return caller.response;
+   const { ministerId } = await params;
+   const idNum = parseInt(ministerId, 10);
+ 
+diff -ruN base/src/app/api/minister-meetings/meeting/[meetingId]/route.ts work/src/app/api/minister-meetings/meeting/[meetingId]/route.ts
+--- base/src/app/api/minister-meetings/meeting/[meetingId]/route.ts	2026-11-02 18:35:15.866339310 +0000
++++ work/src/app/api/minister-meetings/meeting/[meetingId]/route.ts	2026-11-02 18:36:44.629003904 +0000
+@@ -1,5 +1,6 @@
+ import { NextRequest, NextResponse } from 'next/server';
+ import { updateMinisterMeeting, deleteMinisterMeeting } from '@/libs/ministerMeetingsRepository';
++import { requireUser } from '@/libs/currentUser';
+ 
+ function isValidUuid(value: string): boolean {
+   return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
+@@ -14,6 +15,8 @@
+   request: NextRequest,
+   { params }: { params: Promise<{ meetingId: string }> }
+ ) {
++  const caller = await requireUser();
++  if ('response' in caller) return caller.response;
+   const { meetingId } = await params;
+ 
+   if (!isValidUuid(meetingId)) {
+@@ -33,7 +36,8 @@
+     );
+   }
+ 
+-  const { username, meetingDate, title, comments = '' } = body;
++  const { meetingDate, title, comments = '' } = body;
++  const username = caller.username;   // from the session, never the request
+ 
+   if (!username?.trim()) {
+     return NextResponse.json(
+@@ -88,6 +92,8 @@
+   request: NextRequest,
+   { params }: { params: Promise<{ meetingId: string }> }
+ ) {
++  const caller = await requireUser();
++  if ('response' in caller) return caller.response;
+   const { meetingId } = await params;
+ 
+   if (!isValidUuid(meetingId)) {
+@@ -107,7 +113,7 @@
+     );
+   }
+ 
+-  if (!body.username?.trim()) {
++  if (!caller.username) {
+     return NextResponse.json(
+       { error: 'Bad Request', message: 'username is required.' },
+       { status: 400 }
+@@ -115,7 +121,7 @@
+   }
+ 
+   try {
+-    const deleted = await deleteMinisterMeeting(meetingId, body.username.trim());
++    const deleted = await deleteMinisterMeeting(meetingId, caller.username);
+     if (!deleted) {
+       return NextResponse.json(
+         { error: 'Forbidden', message: 'Meeting not found or you are not the author.' },
+diff -ruN base/src/app/api/minister-meetings/route.ts work/src/app/api/minister-meetings/route.ts
+--- base/src/app/api/minister-meetings/route.ts	2026-11-02 18:35:15.866359031 +0000
++++ work/src/app/api/minister-meetings/route.ts	2026-11-02 18:36:44.628362112 +0000
+@@ -1,11 +1,14 @@
+ import { NextRequest, NextResponse } from 'next/server';
+ import { createMinisterMeeting } from '@/libs/ministerMeetingsRepository';
++import { requireUser } from '@/libs/currentUser';
+ 
+ /**
+  * POST /api/minister-meetings
+  * Body: { ministerId, username, meetingDate, title, comments }
+  */
+ export async function POST(request: NextRequest) {
++  const caller = await requireUser();
++  if ('response' in caller) return caller.response;
+   let body: {
+     ministerId?: number | string;
+     username?: string;
+@@ -23,7 +26,8 @@
+     );
+   }
+ 
+-  const { ministerId, username, meetingDate, title, comments = '' } = body;
++  const { ministerId, meetingDate, title, comments = '' } = body;
++  const username = caller.username;   // from the session, never the request
+ 
+   const ministerIdNum = parseInt(String(ministerId), 10);
+   if (isNaN(ministerIdNum) || ministerIdNum <= 0) {
+diff -ruN base/src/app/api/ministernotes/[memberId]/route.ts work/src/app/api/ministernotes/[memberId]/route.ts
+--- base/src/app/api/ministernotes/[memberId]/route.ts	2026-11-02 18:35:15.868241596 +0000
++++ work/src/app/api/ministernotes/[memberId]/route.ts	2026-11-02 18:36:22.956710367 +0000
+@@ -1,5 +1,6 @@
+ import { NextRequest, NextResponse } from 'next/server';
+ import { getNotesByMemberId } from '@/libs/ministers/notesRepository';
++import { requireUser } from '@/libs/currentUser';
+ 
+ 
+ /**
+@@ -10,6 +11,8 @@
+   _request: NextRequest,
+   { params }: { params: Promise<{ memberId: string }> }
+ ) {
++  const caller = await requireUser();
++  if ('response' in caller) return caller.response;
+   const { memberId } = await params;
+ const id = Number(memberId);
+   try {
+diff -ruN base/src/app/api/ministernotes/note/[noteId]/route.ts work/src/app/api/ministernotes/note/[noteId]/route.ts
+--- base/src/app/api/ministernotes/note/[noteId]/route.ts	2026-11-02 18:35:15.868205234 +0000
++++ work/src/app/api/ministernotes/note/[noteId]/route.ts	2026-11-02 18:37:07.710154699 +0000
+@@ -1,5 +1,6 @@
+ import { NextRequest, NextResponse } from 'next/server';
+ import { updateNote, deleteNote } from '@/libs/ministers/notesRepository';
++import { requireUser } from '@/libs/currentUser';
+ 
+ 
+ /**
+@@ -12,6 +13,8 @@
+   request: NextRequest,
+   { params }: { params: Promise<{ noteId: string }> }
+ ) {
++  const caller = await requireUser();
++  if ('response' in caller) return caller.response;
+   const { noteId } = await params;
+ 
+ 
+@@ -26,7 +29,8 @@
+     );
+   }
+ 
+-  const { username, comment } = body;
++  const { comment } = body;
++  const username = caller.username;   // from the session, never the request
+ 
+   if (!username?.trim()) {
+     return NextResponse.json(
+@@ -71,6 +75,8 @@
+   request: NextRequest,
+   { params }: { params: Promise<{ noteId: string }> }
+ ) {
++  const caller = await requireUser();
++  if ('response' in caller) return caller.response;
+   const { noteId } = await params;
+ 
+   let body: { username?: string };
+@@ -83,7 +89,7 @@
+     );
+   }
+ 
+-  const { username } = body;
++  const username = caller.username;   // from the session, never the request
+ 
+   if (!username?.trim()) {
+     return NextResponse.json(
+diff -ruN base/src/app/api/ministernotes/route.ts work/src/app/api/ministernotes/route.ts
+--- base/src/app/api/ministernotes/route.ts	2026-11-02 18:35:15.868261336 +0000
++++ work/src/app/api/ministernotes/route.ts	2026-11-02 18:36:44.631014219 +0000
+@@ -1,5 +1,6 @@
+ import { NextRequest, NextResponse } from 'next/server';
+ import { createNote } from '@/libs/ministers/notesRepository';
++import { requireUser } from '@/libs/currentUser';
+ 
+ 
+ /**
+@@ -13,6 +14,8 @@
+  * }
+  */
+ export async function POST(request: NextRequest) {
++  const caller = await requireUser();
++  if ('response' in caller) return caller.response;
+   let body: { memberId?: number; username?: string; comment?: string };
+ 
+   try {
+@@ -24,7 +27,8 @@
+     );
+   }
+ 
+-  const { memberId, username, comment } = body;
++  const { memberId, comment } = body;
++  const username = caller.username;   // from the session, never the request
+ 
+   if (!username?.trim()) {
+     return NextResponse.json(
+diff -ruN base/src/app/api/network/route.ts work/src/app/api/network/route.ts
+--- base/src/app/api/network/route.ts	2026-11-02 18:35:15.865017671 +0000
++++ work/src/app/api/network/route.ts	2026-11-02 18:36:44.635032098 +0000
+@@ -4,6 +4,7 @@
+ } from '@/libs/networkRepository';
+ import { getContact } from '@/libs/api';
+ import type { NetworkData, NetworkNode, NetworkLink } from '@/types/network';
++import { requireUser } from '@/libs/currentUser';
+ 
+ /**
+  * GET /api/network?username=xxx
+@@ -13,7 +14,9 @@
+  *  - per-edge interaction breakdown + last activity
+  */
+ export async function GET(request: NextRequest) {
+-  const username = request.nextUrl.searchParams.get('username')?.trim() ?? '';
++  const caller = await requireUser();
++  if ('response' in caller) return caller.response;
++  const username = caller.username;
+ 
+   try {
+     const [edges, memberCounts, userTeamIds, userPocIds] = await Promise.all([
+diff -ruN base/src/app/api/notes/[contactId]/route.ts work/src/app/api/notes/[contactId]/route.ts
+--- base/src/app/api/notes/[contactId]/route.ts	2026-11-02 18:35:15.866636888 +0000
++++ work/src/app/api/notes/[contactId]/route.ts	2026-11-02 18:37:16.151503600 +0000
+@@ -1,15 +1,19 @@
+ import { isValidContactId } from '@/libs/contactId';
+ import { NextRequest, NextResponse } from 'next/server';
+ import { getNotesByContactId } from '@/libs/notesRepository';
++import { requireUser } from '@/libs/currentUser';
+ 
+ /**
+  * GET /api/notes/:contactId
+- * Returns all notes for a given contact from the notes database, newest first.
++ * Returns the signed-in user's OWN private notes for a contact, newest first.
++ * Other users' notes are never returned (filtered in SQL).
+  */
+ export async function GET(
+   _request: NextRequest,
+   { params }: { params: Promise<{ contactId: string }> }
+ ) {
++  const caller = await requireUser();
++  if ('response' in caller) return caller.response;
+   const { contactId } = await params;
+ 
+   if (!isValidContactId(contactId)) {
+@@ -20,7 +24,7 @@
+   }
+ 
+   try {
+-    const notes = await getNotesByContactId(contactId);
++    const notes = await getNotesByContactId(contactId, caller.username);
+     return NextResponse.json({ data: notes });
+   } catch (err) {
+     console.error(`GET /api/notes/${contactId} error:`, err);
+diff -ruN base/src/app/api/notes/mynotes/[userName]/route.ts work/src/app/api/notes/mynotes/[userName]/route.ts
+--- base/src/app/api/notes/mynotes/[userName]/route.ts	2026-11-02 18:35:15.866476295 +0000
++++ work/src/app/api/notes/mynotes/[userName]/route.ts	2026-11-02 18:36:51.652943462 +0000
+@@ -1,5 +1,6 @@
+ import { NextRequest, NextResponse } from 'next/server';
+ import { getNotesByUserName} from '@/libs/notesRepository';
++import { requireUser } from '@/libs/currentUser';
+ 
+ function isValidUuid(value: string): boolean {
+   return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
+@@ -13,7 +14,10 @@
+   _request: NextRequest,
+   { params }: { params: Promise<{ userName: string }> }
+ ) {
+-  const { userName } = await params;
++  const caller = await requireUser();
++  if ('response' in caller) return caller.response;
++  await params;   // the URL name is ignored: you can only list your own
++  const userName = caller.username;
+ 
+   try {
+     const notes = await getNotesByUserName(userName);
+diff -ruN base/src/app/api/notes/note/[noteId]/move/route.ts work/src/app/api/notes/note/[noteId]/move/route.ts
+--- base/src/app/api/notes/note/[noteId]/move/route.ts	2026-11-02 18:35:15.866560789 +0000
++++ work/src/app/api/notes/note/[noteId]/move/route.ts	2026-11-02 18:36:44.633133159 +0000
+@@ -1,5 +1,6 @@
+ import { NextRequest, NextResponse } from 'next/server';
+ import { moveNote } from '@/libs/notesRepository';
++import { requireUser } from '@/libs/currentUser';
+ 
+ function isValidUuid(value: string): boolean {
+   return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
+@@ -15,6 +16,8 @@
+   request: NextRequest,
+   { params }: { params: Promise<{ noteId: string }> }
+ ) {
++  const caller = await requireUser();
++  if ('response' in caller) return caller.response;
+   const { noteId } = await params;
+ 
+   if (!isValidUuid(noteId)) {
+@@ -34,7 +37,7 @@
+     );
+   }
+ 
+-  if (!body.username?.trim()) {
++  if (!caller.username) {
+     return NextResponse.json(
+       { error: 'Bad Request', message: 'username is required.' },
+       { status: 400 }
+@@ -42,7 +45,7 @@
+   }
+ 
+   try {
+-    const moved = await moveNote(noteId, body.username.trim());
++    const moved = await moveNote(noteId, caller.username);
+     if (!moved) {
+       return NextResponse.json(
+         { error: 'Forbidden', message: 'Note not found or you are not the owner.' },
+diff -ruN base/src/app/api/notes/note/[noteId]/route.ts work/src/app/api/notes/note/[noteId]/route.ts
+--- base/src/app/api/notes/note/[noteId]/route.ts	2026-11-02 18:35:15.866585678 +0000
++++ work/src/app/api/notes/note/[noteId]/route.ts	2026-11-02 18:37:07.710582203 +0000
+@@ -1,5 +1,6 @@
+ import { NextRequest, NextResponse } from 'next/server';
+ import { updateNote, deleteNote } from '@/libs/notesRepository';
++import { requireUser } from '@/libs/currentUser';
+ 
+ function isValidUuid(value: string): boolean {
+   return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
+@@ -15,6 +16,8 @@
+   request: NextRequest,
+   { params }: { params: Promise<{ noteId: string }> }
+ ) {
++  const caller = await requireUser();
++  if ('response' in caller) return caller.response;
+   const { noteId } = await params;
+ 
+   if (!isValidUuid(noteId)) {
+@@ -34,7 +37,8 @@
+     );
+   }
+ 
+-  const { username, comment } = body;
++  const { comment } = body;
++  const username = caller.username;   // from the session, never the request
+ 
+   if (!username?.trim()) {
+     return NextResponse.json(
+@@ -79,6 +83,8 @@
+   request: NextRequest,
+   { params }: { params: Promise<{ noteId: string }> }
+ ) {
++  const caller = await requireUser();
++  if ('response' in caller) return caller.response;
+   const { noteId } = await params;
+ 
+   if (!isValidUuid(noteId)) {
+@@ -98,7 +104,7 @@
+     );
+   }
+ 
+-  const { username } = body;
++  const username = caller.username;   // from the session, never the request
+ 
+   if (!username?.trim()) {
+     return NextResponse.json(
+diff -ruN base/src/app/api/notes/route.ts work/src/app/api/notes/route.ts
+--- base/src/app/api/notes/route.ts	2026-11-02 18:35:15.866656623 +0000
++++ work/src/app/api/notes/route.ts	2026-11-02 18:36:44.632391075 +0000
+@@ -1,6 +1,7 @@
+ import { isValidContactId } from '@/libs/contactId';
+ import { NextRequest, NextResponse } from 'next/server';
+ import { createNote } from '@/libs/notesRepository';
++import { requireUser } from '@/libs/currentUser';
+ 
+ /**
+  * POST /api/notes
+@@ -13,6 +14,8 @@
+  * }
+  */
+ export async function POST(request: NextRequest) {
++  const caller = await requireUser();
++  if ('response' in caller) return caller.response;
+   let body: { contactId?: string; username?: string; comment?: string };
+ 
+   try {
+@@ -24,7 +27,8 @@
+     );
+   }
+ 
+-  const { contactId, username, comment } = body;
++  const { contactId, comment } = body;
++  const username = caller.username;   // from the session, never the request
+ 
+   if (!contactId || !isValidContactId(contactId)) {
+     return NextResponse.json(
+diff -ruN base/src/app/api/poc/[contactId]/route.ts work/src/app/api/poc/[contactId]/route.ts
+--- base/src/app/api/poc/[contactId]/route.ts	2026-11-02 18:35:15.861021305 +0000
++++ work/src/app/api/poc/[contactId]/route.ts	2026-11-02 18:36:22.965904048 +0000
+@@ -1,6 +1,7 @@
+ import { isValidContactId } from '@/libs/contactId';
+ import { NextRequest, NextResponse } from 'next/server';
+ import { getPocByContactId } from '@/libs/pocRepository';
++import { requireUser } from '@/libs/currentUser';
+ 
+ /**
+  * GET /api/poc/:contactId
+@@ -10,6 +11,8 @@
+   _request: NextRequest,
+   { params }: { params: Promise<{ contactId: string }> }
+ ) {
++  const caller = await requireUser();
++  if ('response' in caller) return caller.response;
+   const { contactId } = await params;
+   if (!isValidContactId(contactId)) {
+     return NextResponse.json(
+diff -ruN base/src/app/api/poc/poc/[pocId]/route.ts work/src/app/api/poc/poc/[pocId]/route.ts
+--- base/src/app/api/poc/poc/[pocId]/route.ts	2026-11-02 18:35:15.860989128 +0000
++++ work/src/app/api/poc/poc/[pocId]/route.ts	2026-11-02 18:37:07.713086611 +0000
+@@ -1,5 +1,6 @@
+ import { NextRequest, NextResponse } from 'next/server';
+ import { deletePoc, createPoc } from '@/libs/pocRepository';
++import { requireUser } from '@/libs/currentUser';
+ 
+ function isValidUuid(value: string): boolean {
+   return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
+@@ -15,6 +16,8 @@
+   request: NextRequest,
+   { params }: { params: Promise<{ pocId: string }> }
+ ) {
++  const caller = await requireUser();
++  if ('response' in caller) return caller.response;
+   const { pocId } = await params;
+ 
+   if (!isValidUuid(pocId)) {
+@@ -34,7 +37,7 @@
+     );
+   }
+ 
+-  const { username } = body;
++  const username = caller.username;   // from the session, never the request
+ 
+   if (!username?.trim()) {
+     return NextResponse.json(
+@@ -76,6 +79,8 @@
+  * Returns 409 Conflict if the user has already posted a note for this contact.
+  */
+ export async function POST(request: NextRequest) {
++  const caller = await requireUser();
++  if ('response' in caller) return caller.response;
+   let body: { contactId?: string; username?: string; details?: string };
+ 
+   try {
+@@ -87,7 +92,8 @@
+     );
+   }
+ 
+-  const { contactId, username, details } = body;
++  const { contactId, details } = body;
++  const username = caller.username;   // from the session, never the request
+ 
+   if (!contactId || !isValidUuid(contactId)) {
+     return NextResponse.json(
+diff -ruN base/src/app/api/poc/route.ts work/src/app/api/poc/route.ts
+--- base/src/app/api/poc/route.ts	2026-11-02 18:35:15.861037875 +0000
++++ work/src/app/api/poc/route.ts	2026-11-02 18:36:44.644697228 +0000
+@@ -1,5 +1,6 @@
+ import { NextRequest, NextResponse } from 'next/server';
+ import { createPoc } from '@/libs/pocRepository';
++import { requireUser } from '@/libs/currentUser';
+ 
+ function isValidUuid(value: string): boolean {
+   return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
+@@ -16,6 +17,8 @@
+  * }
+  */
+ export async function POST(request: NextRequest) {
++  const caller = await requireUser();
++  if ('response' in caller) return caller.response;
+   let body: { contactId?: string; username?: string; details?: string };
+ 
+   try {
+@@ -27,7 +30,8 @@
+     );
+   }
+ 
+-  const { contactId, username, details } = body;
++  const { contactId, details } = body;
++  const username = caller.username;   // from the session, never the request
+ 
+   if (!contactId || !isValidUuid(contactId)) {
+     return NextResponse.json(
+diff -ruN base/src/app/api/profile/teams/[teamId]/route.ts work/src/app/api/profile/teams/[teamId]/route.ts
+--- base/src/app/api/profile/teams/[teamId]/route.ts	2026-11-02 18:35:15.866735825 +0000
++++ work/src/app/api/profile/teams/[teamId]/route.ts	2026-11-02 18:36:44.632117053 +0000
+@@ -1,5 +1,6 @@
+ import { NextRequest, NextResponse } from 'next/server';
+ import { removeUserTeam } from '@/libs/teamsRepository';
++import { requireUser } from '@/libs/currentUser';
+ 
+ function isValidUuid(value: string): boolean {
+   return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
+@@ -14,6 +15,8 @@
+   request: NextRequest,
+   { params }: { params: Promise<{ teamId: string }> }
+ ) {
++  const caller = await requireUser();
++  if ('response' in caller) return caller.response;
+   const { teamId: userTeamId } = await params;
+ 
+   if (!isValidUuid(userTeamId)) {
+@@ -33,7 +36,7 @@
+     );
+   }
+ 
+-  if (!body.username?.trim()) {
++  if (!caller.username) {
+     return NextResponse.json(
+       { error: 'Bad Request', message: 'username is required.' },
+       { status: 400 }
+@@ -41,7 +44,7 @@
+   }
+ 
+   try {
+-    const removed = await removeUserTeam(userTeamId, body.username.trim());
++    const removed = await removeUserTeam(userTeamId, caller.username);
+ 
+     if (!removed) {
+       return NextResponse.json(
+diff -ruN base/src/app/api/profile/teams/route.ts work/src/app/api/profile/teams/route.ts
+--- base/src/app/api/profile/teams/route.ts	2026-11-02 18:35:15.866755899 +0000
++++ work/src/app/api/profile/teams/route.ts	2026-11-02 18:36:44.631594671 +0000
+@@ -1,5 +1,6 @@
+ import { NextRequest, NextResponse } from 'next/server';
+ import { getAllTeams, getUserTeams, addUserTeam } from '@/libs/teamsRepository';
++import { requireUser } from '@/libs/currentUser';
+ 
+ function isValidUuid(value: string): boolean {
+   return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
+@@ -10,7 +11,9 @@
+  * Returns all available teams + the user's current team memberships.
+  */
+ export async function GET(request: NextRequest) {
+-  const username = request.nextUrl.searchParams.get('username');
++  const caller = await requireUser();
++  if ('response' in caller) return caller.response;
++  const username = caller.username;
+ 
+   if (!username?.trim()) {
+     return NextResponse.json(
+@@ -40,6 +43,8 @@
+  * Body: { username, teamId, isPrimary }
+  */
+ export async function POST(request: NextRequest) {
++  const caller = await requireUser();
++  if ('response' in caller) return caller.response;
+   let body: { username?: string; teamId?: string; isPrimary?: boolean };
+ 
+   try {
+@@ -51,7 +56,8 @@
+     );
+   }
+ 
+-  const { username, teamId, isPrimary = false } = body;
++  const { teamId, isPrimary = false } = body;
++  const username = caller.username;   // from the session, never the request
+ 
+   if (!username?.trim()) {
+     return NextResponse.json(
+diff -ruN base/src/app/api/tag/[contactId]/route.ts work/src/app/api/tag/[contactId]/route.ts
+--- base/src/app/api/tag/[contactId]/route.ts	2026-11-02 18:35:15.868049437 +0000
++++ work/src/app/api/tag/[contactId]/route.ts	2026-11-02 18:36:22.964900088 +0000
+@@ -1,6 +1,7 @@
+ import { isValidContactId } from '@/libs/contactId';
+ import { NextRequest, NextResponse } from 'next/server';
+ import { getTagByContactId } from '@/libs/tagsRepository';
++import { requireUser } from '@/libs/currentUser';
+ 
+ /**
+  * GET /api/notes/:contactId
+@@ -10,6 +11,8 @@
+   _request: NextRequest,
+   { params }: { params: Promise<{ contactId: string }> }
+ ) {
++  const caller = await requireUser();
++  if ('response' in caller) return caller.response;
+   const { contactId } = await params;
+   if (!isValidContactId(contactId)) {
+     return NextResponse.json(
+diff -ruN base/src/app/api/tag/route.ts work/src/app/api/tag/route.ts
+--- base/src/app/api/tag/route.ts	2026-11-02 18:35:15.868066124 +0000
++++ work/src/app/api/tag/route.ts	2026-11-02 18:36:44.643321769 +0000
+@@ -1,5 +1,6 @@
+ import { NextRequest, NextResponse } from 'next/server';
+ import { createTag } from '@/libs/tagsRepository';
++import { requireUser } from '@/libs/currentUser';
+ 
+ function isValidUuid(value: string): boolean {
+   return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
+@@ -16,6 +17,8 @@
+  * }
+  */
+ export async function POST(request: NextRequest) {
++  const caller = await requireUser();
++  if ('response' in caller) return caller.response;
+   let body: { contactId?: string; username?: string; tag?: string };
+ 
+   try {
+@@ -27,7 +30,8 @@
+     );
+   }
+ 
+-  const { contactId, username, tag } = body;
++  const { contactId, tag } = body;
++  const username = caller.username;   // from the session, never the request
+ 
+   if (!contactId || !isValidUuid(contactId)) {
+     return NextResponse.json(
+diff -ruN base/src/app/api/tag/tag/[tagId]/route.ts work/src/app/api/tag/tag/[tagId]/route.ts
+--- base/src/app/api/tag/tag/[tagId]/route.ts	2026-11-02 18:35:15.868128516 +0000
++++ work/src/app/api/tag/tag/[tagId]/route.ts	2026-11-02 18:37:07.712682946 +0000
+@@ -1,5 +1,6 @@
+ import { NextRequest, NextResponse } from 'next/server';
+ import { deleteTag, } from '@/libs/tagsRepository';
++import { requireUser } from '@/libs/currentUser';
+ 
+ function isValidUuid(value: string): boolean {
+   return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
+@@ -15,6 +16,8 @@
+   request: NextRequest,
+   { params }: { params: Promise<{ tagId: string }> }
+ ) {
++  const caller = await requireUser();
++  if ('response' in caller) return caller.response;
+   const { tagId } = await params;
+ 
+   if (!isValidUuid(tagId)) {
+@@ -34,7 +37,7 @@
+     );
+   }
+ 
+-  const { username } = body;
++  const username = caller.username;   // from the session, never the request
+ 
+   if (!username?.trim()) {
+     return NextResponse.json(
+diff -ruN base/src/app/api/tags/route.ts work/src/app/api/tags/route.ts
+--- base/src/app/api/tags/route.ts	2026-11-02 18:35:15.865930115 +0000
++++ work/src/app/api/tags/route.ts	2026-11-02 18:36:22.966889869 +0000
+@@ -1,11 +1,14 @@
+ import { NextResponse } from 'next/server';
+ import { getAllTags } from '@/libs/tagsDdRepository';
++import { requireUser } from '@/libs/currentUser';
+ 
+ /**
+  * GET /api/teams
+  * Returns all teams for the team buttons on the home page.
+  */
+ export async function GET() {
++  const caller = await requireUser();
++  if ('response' in caller) return caller.response;
+   try {
+     const tags = await getAllTags();
+     return NextResponse.json({ data: tags });
+diff -ruN base/src/app/api/teams/[teamId]/route.ts work/src/app/api/teams/[teamId]/route.ts
+--- base/src/app/api/teams/[teamId]/route.ts	2026-11-02 18:35:15.867376055 +0000
++++ work/src/app/api/teams/[teamId]/route.ts	2026-11-02 18:36:44.629800414 +0000
+@@ -1,5 +1,6 @@
+ import { NextRequest, NextResponse } from 'next/server';
+ import { getTeamById, getTeamMembers, updateTeamDetails } from '@/libs/teamsRepository';
++import { requireUser } from '@/libs/currentUser';
+ 
+ function isValidUuid(value: string): boolean {
+   return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
+@@ -13,6 +14,8 @@
+   _request: NextRequest,
+   { params }: { params: Promise<{ teamId: string }> }
+ ) {
++  const caller = await requireUser();
++  if ('response' in caller) return caller.response;
+   const { teamId } = await params;
+ 
+   if (!isValidUuid(teamId)) {
+@@ -54,6 +57,8 @@
+   request: NextRequest,
+   { params }: { params: Promise<{ teamId: string }> }
+ ) {
++  const caller = await requireUser();
++  if ('response' in caller) return caller.response;
+   const { teamId } = await params;
+ 
+   if (!isValidUuid(teamId)) {
+@@ -73,7 +78,8 @@
+     );
+   }
+ 
+-  const { username, description = '', intranetUrl = '' } = body;
++  const { description = '', intranetUrl = '' } = body;
++  const username = caller.username;   // from the session, never the request
+ 
+   if (!username?.trim()) {
+     return NextResponse.json(
+diff -ruN base/src/app/api/teams/[teamId]/stats/route.ts work/src/app/api/teams/[teamId]/stats/route.ts
+--- base/src/app/api/teams/[teamId]/stats/route.ts	2026-11-02 18:35:15.867408880 +0000
++++ work/src/app/api/teams/[teamId]/stats/route.ts	2026-11-02 18:36:22.953227280 +0000
+@@ -1,5 +1,6 @@
+ import { NextRequest, NextResponse } from 'next/server';
+ import { getTeamWeeklyStats } from '@/libs/teamStatsRepository';
++import { requireUser } from '@/libs/currentUser';
+ 
+ function isValidUuid(value: string): boolean {
+   return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
+@@ -14,6 +15,8 @@
+   _request: NextRequest,
+   { params }: { params: Promise<{ teamId: string }> }
+ ) {
++  const caller = await requireUser();
++  if ('response' in caller) return caller.response;
+   const { teamId } = await params;
+ 
+   if (!isValidUuid(teamId)) {
+diff -ruN base/src/app/api/teams/route.ts work/src/app/api/teams/route.ts
+--- base/src/app/api/teams/route.ts	2026-11-02 18:35:15.867428485 +0000
++++ work/src/app/api/teams/route.ts	2026-11-02 18:36:22.952889003 +0000
+@@ -1,11 +1,14 @@
+ import { NextResponse } from 'next/server';
+ import { getAllTeams } from '@/libs/teamsRepository';
++import { requireUser } from '@/libs/currentUser';
+ 
+ /**
+  * GET /api/teams
+  * Returns all teams for the team buttons on the home page.
+  */
+ export async function GET() {
++  const caller = await requireUser();
++  if ('response' in caller) return caller.response;
+   try {
+     const teams = await getAllTeams();
+     return NextResponse.json({ data: teams });
+diff -ruN base/src/app/api/usernames/route.ts work/src/app/api/usernames/route.ts
+--- base/src/app/api/usernames/route.ts	2026-11-02 18:35:15.864631498 +0000
++++ work/src/app/api/usernames/route.ts	2026-11-02 18:36:22.967029739 +0000
+@@ -1,5 +1,6 @@
+ import { NextRequest, NextResponse } from 'next/server';
+ import { notesQuery } from '@/libs/notesDb';
++import { requireUser } from '@/libs/currentUser';
+ 
+ /**
+  * GET /api/usernames?q=par
+@@ -16,6 +17,8 @@
+  *   ) u WHERE username ILIKE $1 ORDER BY username LIMIT 10
+  */
+ export async function GET(request: NextRequest) {
++  const caller = await requireUser();
++  if ('response' in caller) return caller.response;
+   const q = request.nextUrl.searchParams.get('q')?.trim() ?? '';
+ 
+   if (q.length < 2) {
+diff -ruN base/src/app/api/users/[username]/about/route.ts work/src/app/api/users/[username]/about/route.ts
+--- base/src/app/api/users/[username]/about/route.ts	2026-11-02 18:35:15.867115495 +0000
++++ work/src/app/api/users/[username]/about/route.ts	2026-11-02 18:37:27.916022230 +0000
+@@ -1,13 +1,14 @@
+ import { NextRequest, NextResponse } from 'next/server';
+-import { getServerSession } from 'next-auth';
+-import { authOptions } from '@/app/api/auth/[...nextauth]/route';
+ import { getAboutMe, upsertAboutMe } from '@/libs/userProfileRepository';
++import { requireUser } from '@/libs/currentUser';
+ 
+ const MAX_LENGTH = 2000;
+ type Ctx = { params: Promise<{ username: string }> };
+ 
+ /** GET /api/users/:username/about */
+ export async function GET(_r: NextRequest, { params }: Ctx) {
++  const caller = await requireUser();
++  if ('response' in caller) return caller.response;
+   const u = decodeURIComponent((await params).username).trim();
+   if (!u) return NextResponse.json({ error: 'Bad Request', message: 'username is required.' }, { status: 400 });
+   try {
+@@ -24,10 +25,10 @@
+  * not a body field, since this is personal content.
+  */
+ export async function PUT(request: NextRequest, { params }: Ctx) {
++  const caller = await requireUser();
++  if ('response' in caller) return caller.response;
+   const u = decodeURIComponent((await params).username).trim();
+-  const session = await getServerSession(authOptions);
+-  const me = (session?.user as { username?: string } | undefined)?.username;
+-  if (!me || me !== u) {
++  if (caller.username.toLowerCase() !== u.toLowerCase()) {
+     return NextResponse.json({ error: 'Forbidden', message: 'You can only edit your own profile.' }, { status: 403 });
+   }
+ 
+@@ -39,7 +40,7 @@
+   }
+ 
+   try {
+-    await upsertAboutMe(u, aboutMe);
++    await upsertAboutMe(caller.username, aboutMe);
+     return NextResponse.json({ data: { username: u, aboutMe } });
+   } catch (err) {
+     console.error('PUT about error:', err);
+diff -ruN base/src/app/api/users/[username]/directory/route.ts work/src/app/api/users/[username]/directory/route.ts
+--- base/src/app/api/users/[username]/directory/route.ts	2026-11-02 18:35:15.867155121 +0000
++++ work/src/app/api/users/[username]/directory/route.ts	2026-11-02 18:36:22.956225663 +0000
+@@ -1,5 +1,6 @@
+ import { NextRequest, NextResponse } from 'next/server';
+ import type { DirectoryUser } from '@/types/directory';
++import { requireUser } from '@/libs/currentUser';
+ 
+ /**
+  * GET /api/users/:username/directory
+@@ -12,6 +13,8 @@
+  *   DIRECTORY_API_TOKEN     optional bearer token
+  */
+ export async function GET(_r: NextRequest, { params }: { params: Promise<{ username: string }> }) {
++  const caller = await requireUser();
++  if ('response' in caller) return caller.response;
+   const u = decodeURIComponent((await params).username).trim();
+   if (!u || !/^[A-Za-z0-9._-]+$/.test(u)) {
+     return NextResponse.json({ error: 'Bad Request', message: 'Invalid username.' }, { status: 400 });
+diff -ruN base/src/app/api/users/[username]/summary/route.ts work/src/app/api/users/[username]/summary/route.ts
+--- base/src/app/api/users/[username]/summary/route.ts	2026-11-02 18:35:15.867189492 +0000
++++ work/src/app/api/users/[username]/summary/route.ts	2026-11-02 18:36:22.956021183 +0000
+@@ -1,8 +1,11 @@
+ import { NextRequest, NextResponse } from 'next/server';
+ import { getUserSummary } from '@/libs/userProfileRepository';
++import { requireUser } from '@/libs/currentUser';
+ 
+ /** GET /api/users/:username/summary — about me, PoC contacts, latest activity */
+ export async function GET(_r: NextRequest, { params }: { params: Promise<{ username: string }> }) {
++  const caller = await requireUser();
++  if ('response' in caller) return caller.response;
+   const { username } = await params;
+   const u = decodeURIComponent(username).trim();
+   if (!u) return NextResponse.json({ error: 'Bad Request', message: 'username is required.' }, { status: 400 });
+diff -ruN base/src/libs/currentUser.ts work/src/libs/currentUser.ts
+--- base/src/libs/currentUser.ts	1970-01-01 01:00:00.000000000 +0100
++++ work/src/libs/currentUser.ts	2026-11-02 18:36:22.877755975 +0000
+@@ -0,0 +1,37 @@
++// SERVER ONLY — the signed-in user, taken from the NextAuth session cookie.
++//
++// Route handlers must use this for "who is doing this?" and NEVER a
++// username from the request body, query string or URL: those are typed by
++// the caller and can be anything. The session cookie is encrypted and
++// signed with NEXTAUTH_SECRET, so it can't be forged.
++
++import { getServerSession } from 'next-auth';
++import { NextResponse } from 'next/server';
++import { authOptions } from '@/app/api/auth/[...nextauth]/route';
++
++/** The signed-in user's username, or null when there is no session. */
++export async function getCurrentUsername(): Promise<string | null> {
++  const session = await getServerSession(authOptions);
++  const username = (session?.user as { username?: string } | undefined)?.username?.trim();
++  return username || null;
++}
++
++/**
++ * Use at the top of every route handler:
++ *
++ *   const caller = await requireUser();
++ *   if ('response' in caller) return caller.response;
++ *   // caller.username is trustworthy from here on
++ */
++export async function requireUser(): Promise<{ username: string } | { response: NextResponse }> {
++  const username = await getCurrentUsername();
++  if (!username) {
++    return {
++      response: NextResponse.json(
++        { error: 'Unauthorized', message: 'Please sign in.' },
++        { status: 401 }
++      ),
++    };
++  }
++  return { username };
++}
+diff -ruN base/src/libs/meetingsRepository.ts work/src/libs/meetingsRepository.ts
+--- base/src/libs/meetingsRepository.ts	2026-11-02 18:35:15.870529324 +0000
++++ work/src/libs/meetingsRepository.ts	2026-11-02 18:39:10.607033782 +0000
+@@ -215,29 +215,38 @@
+   return rows.length > 0;
+ }
+ 
+-// Add a document link to a meeting
++// Add a document link to a meeting — only the meeting's owner can.
++// Returns null when the meeting doesn't exist or belongs to someone else.
+ export async function addMeetingLink(
+   meetingId: string,
+-  reference: string
+-): Promise<MeetingLink> {
++  reference: string,
++  username: string
++): Promise<MeetingLink | null> {
+   const rows = await notesQuery<MeetingLinkRow>(
+     `INSERT INTO contact_meeting_links (meeting_id, reference)
+-     VALUES ($1, $2)
++     SELECT meeting_id, $2 FROM contact_meetings
++     WHERE meeting_id = $1 AND username = $3
+      RETURNING meeting_link_id, meeting_id, reference, created_at`,
+-    [meetingId, reference]
++    [meetingId, reference, username]
+   );
+-  return toMeetingLink(rows[0]);
++  return rows.length ? toMeetingLink(rows[0]) : null;
+ }
+ 
+-// Delete a meeting link
++// Delete a meeting link — only from the caller's own meeting
+ export async function deleteMeetingLink(
+-  meetingLinkId: string
++  meetingId: string,
++  meetingLinkId: string,
++  username: string
+ ): Promise<boolean> {
+   const rows = await notesQuery<{ meeting_link_id: string }>(
+-    `DELETE FROM contact_meeting_links
+-     WHERE meeting_link_id = $1
+-     RETURNING meeting_link_id`,
+-    [meetingLinkId]
++    `DELETE FROM contact_meeting_links l
++     USING contact_meetings m
++     WHERE l.meeting_link_id = $2
++       AND l.meeting_id = $1
++       AND m.meeting_id = l.meeting_id
++       AND m.username = $3
++     RETURNING l.meeting_link_id`,
++    [meetingId, meetingLinkId, username]
+   );
+   return rows.length > 0;
+ }
+diff -ruN base/src/libs/notesRepository.ts work/src/libs/notesRepository.ts
+--- base/src/libs/notesRepository.ts	2026-11-02 18:35:15.870958379 +0000
++++ work/src/libs/notesRepository.ts	2026-11-02 18:37:16.150845442 +0000
+@@ -19,13 +19,14 @@
+   };
+ }
+ 
+-export async function getNotesByContactId(contactId: string): Promise<ContactNote[]> {
++/** Private notes: only the given user's own notes for this contact. */
++export async function getNotesByContactId(contactId: string, username: string): Promise<ContactNote[]> {
+   const rows = await notesQuery<NoteRow>(
+     `SELECT note_id, contact_id, username, comment, created_at
+      FROM contact_notes
+-     WHERE contact_id = $1
++     WHERE contact_id = $1 AND username = $2
+      ORDER BY created_at DESC`,
+-    [contactId]
++    [contactId, username]
+   );
+   return rows.map(toNote);
+ }

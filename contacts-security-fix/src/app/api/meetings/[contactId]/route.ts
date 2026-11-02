@@ -1,0 +1,35 @@
+import { isValidContactId } from '@/libs/contactId';
+import { NextRequest, NextResponse } from 'next/server';
+import { getMeetingsByContactId } from '@/libs/meetingsRepository';
+import { requireUser } from '@/libs/currentUser';
+
+/**
+ * GET /api/meetings/:contactId
+ * Returns all meetings for a contact with their document links.
+ */
+export async function GET(
+  _request: NextRequest,
+  { params }: { params: Promise<{ contactId: string }> }
+) {
+  const caller = await requireUser();
+  if ('response' in caller) return caller.response;
+  const { contactId } = await params;
+
+  if (!isValidContactId(contactId)) {
+    return NextResponse.json(
+      { error: 'Bad Request', message: `"${contactId}" is not a valid contact ID.` },
+      { status: 400 }
+    );
+  }
+
+  try {
+    const meetings = await getMeetingsByContactId(contactId);
+    return NextResponse.json({ data: meetings });
+  } catch (err) {
+    console.error(`GET /api/meetings/${contactId} error:`, err);
+    return NextResponse.json(
+      { error: 'Internal Server Error', message: 'An unexpected error occurred' },
+      { status: 500 }
+    );
+  }
+}
